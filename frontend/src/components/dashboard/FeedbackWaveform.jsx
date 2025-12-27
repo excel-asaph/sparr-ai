@@ -116,11 +116,47 @@ const FeedbackWaveform = ({ highlights = [], duration = "15:00", agentName = "AI
 
             {/* Transcript Snippet Area */}
             {activeHighlight !== null ? (
-                <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 transition-all">
-                    <p className="text-sm text-gray-700">
-                        <span className="font-bold text-blue-800">Feedback:</span> {highlights[activeHighlight].text}
-                    </p>
-                </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col md:flex-row"
+                >
+                    {/* Context Column */}
+                    <div className="p-5 md:w-2/3 border-b md:border-b-0 md:border-r border-gray-100 bg-gray-50/30">
+                        {highlights[activeHighlight].qaContext ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Context: The Question</h5>
+                                    <p className="text-sm font-medium text-gray-900 leading-snug">"{highlights[activeHighlight].qaContext.question}"</p>
+                                </div>
+                                <div className="relative">
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-200 rounded-full"></div>
+                                    <div className="pl-3">
+                                        <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">You Said</h5>
+                                        <p className="text-xs text-gray-600 italic leading-relaxed">"{highlights[activeHighlight].qaContext.answer}"</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="h-full flex items-center justify-center text-gray-400 text-xs italic p-4">
+                                No transcript context available for this moment.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Feedback Column */}
+                    <div className="p-5 md:w-1/3 bg-blue-50/30 flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-2">
+                            {getIcon(highlights[activeHighlight].type)}
+                            <span className={`text-xs font-bold uppercase ${highlights[activeHighlight].type === 'success' ? 'text-green-700' : highlights[activeHighlight].type === 'warning' ? 'text-amber-700' : highlights[activeHighlight].type === 'critical' ? 'text-red-700' : 'text-gray-700'}`}>
+                                {highlights[activeHighlight].type} Feedback
+                            </span>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900 leading-snug">
+                            {highlights[activeHighlight].text}
+                        </p>
+                    </div>
+                </motion.div>
             ) : (
                 <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center text-sm text-gray-400">
                     Hover over the pins to view specific feedback moments.

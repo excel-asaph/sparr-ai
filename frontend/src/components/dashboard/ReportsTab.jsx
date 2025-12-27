@@ -33,25 +33,41 @@ const MOCK_SESSIONS = [
                 timestamp: "02:14",
                 type: "warning",
                 text: "You hesitated on the CAP Theorem question",
-                audioUrl: null
+                audioUrl: null,
+                qaContext: {
+                    question: "Can you explain the CAP Theorem and its implications for distributed systems?",
+                    answer: "Umm... so CAP stands for Consistency, Availability, and... Partition tolerance. It says that... well, you can't have all three at the same time. I think you have to choose two? Like in a database...",
+                }
             },
             {
                 timestamp: "05:30",
                 type: "success",
                 text: "Great use of the STAR method!",
-                audioUrl: null
+                audioUrl: null,
+                qaContext: {
+                    question: "Tell me about a time you had to optimize a slow application.",
+                    answer: "Sure. Situation: At my last job, our dashboard was taking 10s to load. Task: I was assigned to fix it. Action: I implemented memoization and virtualized lists. Result: Load time dropped to 2s.",
+                }
             },
             {
                 timestamp: "08:45",
                 type: "success",
                 text: "Excellent explanation of React hooks lifecycle",
-                audioUrl: null
+                audioUrl: null,
+                qaContext: {
+                    question: "How does useEffect dependency array work exactly?",
+                    answer: "The dependency array tells React when to re-run the effect. If it's empty, it runs once on mount. If values change, it runs again. It's crucial for referential equality check.",
+                }
             },
             {
                 timestamp: "12:20",
                 type: "critical",
                 text: "Missed opportunity to discuss performance optimization",
-                audioUrl: null
+                audioUrl: null,
+                qaContext: {
+                    question: "How would you handle a list of 10,000 items in the DOM?",
+                    answer: "I would probably just render them... maybe use pagination? I haven't really dealt with lists that big before.",
+                }
             }
         ],
         agent: {
