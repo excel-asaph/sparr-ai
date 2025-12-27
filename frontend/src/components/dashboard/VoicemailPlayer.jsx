@@ -78,10 +78,10 @@ const VoicemailPlayer = ({ voicemail, agent }) => {
 
                         {/* Simulated Waveform (Visual Only) */}
                         <div className="flex-1 h-8 flex items-center gap-0.5 opacity-50">
-                            {[...Array(30)].map((_, i) => (
+                            {[...Array(60)].map((_, i) => (
                                 <div
                                     key={i}
-                                    className={`w-1 rounded-full bg-blue-500 transition-all duration-300 ${i / 30 * 100 < progress ? 'opacity-100 h-6' : 'opacity-30 h-3'}`}
+                                    className={`w-1 rounded-full bg-blue-500 transition-all duration-300 ${i / 60 * 100 < progress ? 'opacity-100 h-6' : 'opacity-30 h-3'}`}
                                     style={{ height: `${Math.max(20, Math.random() * 100)}%` }}
                                 />
                             ))}
