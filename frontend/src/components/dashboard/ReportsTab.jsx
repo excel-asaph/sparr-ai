@@ -20,6 +20,14 @@ const MOCK_SESSIONS = [
             empathy: 88,
             problemSolving: 92
         },
+        skillsFeedback: {
+            "Technical": "You demonstrated a robust understanding of React internals, specifically Virtual DOM and reconciliation. However, deeper knowledge of React 18 concurrency features would elevate your profile.",
+            "Communication": "Your explanations were clear and concise. You used the STAR method effectively, though occasionally rushed through the 'Result' portion.",
+            "Problem Solving": "Excellent approach to the system design challenge. You broke down the monolith effectively, but hesitated on database sharding strategies.",
+            "Confidence": "You spoke with authority on familiar topics but your tone dipped noticeably when discussing backend scaling.",
+            "Empathy": "You showed great user-centric thinking when discussing accessibility features.",
+            "Pacing": "Generally good, but the coding section felt a bit rushed. Take your time to plan before typing."
+        },
         highlights: [
             {
                 timestamp: "02:14",
@@ -50,6 +58,21 @@ const MOCK_SESSIONS = [
             name: "Michael",
             avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop",
             persona: "Senior Reviewer"
+        },
+        // Mock Audio Data
+        recording: {
+            url: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg", // Dummy audio
+            duration: "15:00"
+        },
+        voicemail: {
+            isUnheard: true,
+            url: "https://actions.google.com/sounds/v1/science_fiction/scifi_laser_1.ogg", // Dummy brief audio
+            duration: "00:45",
+            transcript: "Hey Excel, it's Michael. I reviewed our session, and I dropped a voice message for you. You showed strong technical depth in React, especially with hooks. However, when we got to the system design, you hesitated on the database scaling strategy. I'd love to see you be more decisive there. Overall, solid work."
+        },
+        resumeContext: {
+            storageUrl: "https://example.com/mock-resume.pdf",
+            fileName: "Resume-2024.pdf"
         }
     },
     {
@@ -136,8 +159,14 @@ const MOCK_SESSIONS = [
     }
 ];
 
-const ReportsTab = () => {
+const ReportsTab = ({ onNavigateToResumes }) => {
     const [selectedSession, setSelectedSession] = useState(MOCK_SESSIONS[0]);
+
+    const handleViewResume = (resumeContext) => {
+        if (onNavigateToResumes) {
+            onNavigateToResumes(resumeContext);
+        }
+    };
 
     return (
         <div className="h-full w-full flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
@@ -210,10 +239,10 @@ const ReportsTab = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
-                        className="h-full w-full overflow-y-auto"
+                        className="h-full w-full overflow-hidden"
                     >
                         {/* Pass session prop correctly */}
-                        <ReportDetail session={selectedSession} />
+                        <ReportDetail session={selectedSession} onViewResume={handleViewResume} />
                     </motion.div>
                 </AnimatePresence>
             </div>

@@ -436,6 +436,7 @@ const DashboardPage = () => {
                             isLoadingRecent={isFetchingInterviews}
                             onNavigateToSpaces={() => setActiveTab('spaces')}
                             onNavigateToResumes={() => setActiveTab('resumes')}
+                            onNavigateToReports={() => setActiveTab('reports')}
                         />
                     ) : activeTab === 'mock-interview' ? (
                         <VoiceOrb
@@ -444,7 +445,7 @@ const DashboardPage = () => {
                             systemPrompt={activeSession.systemPrompt}
                         />
                     ) : activeTab === 'reports' ? (
-                        <ReportsTab />
+                        <ReportsTab onNavigateToResumes={() => setActiveTab('resumes')} />
                     ) : activeTab === 'spaces' ? (
                         <SpacesTab
                             allInterviews={allInterviews}

@@ -7,7 +7,7 @@ import { PERSONAS } from '../../data/personas';
 
 import { useAuth } from '../../contexts/AuthContext';
 
-const HomeTab = ({ onStartSession, recentSessions = [], isLoadingRecent = false, onNavigateToSpaces, onNavigateToResumes }) => {
+const HomeTab = ({ onStartSession, recentSessions = [], isLoadingRecent = false, onNavigateToSpaces, onNavigateToResumes, onNavigateToReports }) => {
     // Auth State
     const { currentUser } = useAuth();
     const firstName = currentUser?.displayName?.split(' ')[0] || 'Candidate';
@@ -197,7 +197,10 @@ const HomeTab = ({ onStartSession, recentSessions = [], isLoadingRecent = false,
                             </div>
 
                             <div className="relative z-10 mt-auto w-[55%]">
-                                <button className="bg-[#333] hover:bg-[#444] text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors border border-white/10 flex items-center gap-2 group/btn w-fit">
+                                <button
+                                    onClick={onNavigateToReports}
+                                    className="bg-[#333] hover:bg-[#444] text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors border border-white/10 flex items-center gap-2 group/btn w-fit"
+                                >
                                     View Analysis
                                     <ArrowRight className="w-3 h-3 text-gray-400 opacity-0 -translate-x-2 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 transition-all duration-300" />
                                 </button>
