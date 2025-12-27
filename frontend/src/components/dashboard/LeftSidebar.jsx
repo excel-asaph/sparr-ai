@@ -1,30 +1,39 @@
 import React from 'react';
-import { Home, Mic, FileText, Grid, Settings, User, LogOut, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Home, Mic, FileText, Grid, Settings, PanelLeft, CassetteTape, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const LeftSidebar = ({ isCollapsed, setIsCollapsed, activeTab, setActiveTab }) => {
     const navItems = [
         { id: 'home', icon: Home, label: 'Home' },
-        { id: 'mock-interview', icon: Mic, label: 'Mock Interview' },
-        { id: 'reports', icon: FileText, label: 'Reports' },
-        { id: 'spaces', icon: Grid, label: 'Spaces' },
+        { id: 'reports', icon: CassetteTape, label: 'Reports' },
+        { id: 'spaces', icon: LayoutDashboard, label: 'Spaces' },
     ];
 
     return (
         <motion.div
             initial={{ width: isCollapsed ? 80 : 280 }}
             animate={{ width: isCollapsed ? 80 : 280 }}
-            transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
-            className="h-screen bg-gray-900 text-white flex flex-col border-r border-gray-800 relative z-20 flex-shrink-0"
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="h-full bg-white text-gray-600 flex flex-col rounded-2xl shadow-sm border border-white/50 relative z-20 flex-shrink-0"
         >
-            {/* Branding */}
+            {/* Header: Brand & Toggle */}
             <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+
+                {/* Brand Text (Only visible when expanded) */}
+                {/* Brand Text (Only visible when expanded) */}
                 {!isCollapsed && (
-                    <span className="text-xl font-bold tracking-wider bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                        SPARR AI
+                    <span className="text-2xl font-black tracking-tighter text-gray-900">
+                        SPARR
                     </span>
                 )}
-                {isCollapsed && <span className="text-xl font-bold text-blue-500">S</span>}
+
+                {/* Toggle Button (Always visible) */}
+                <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                    <PanelLeft className="w-5 h-5" />
+                </button>
             </div>
 
             {/* Navigation */}
@@ -34,11 +43,11 @@ const LeftSidebar = ({ isCollapsed, setIsCollapsed, activeTab, setActiveTab }) =
                         key={item.id}
                         onClick={() => setActiveTab(item.id)}
                         className={`w-full flex items-center p-3 rounded-xl transition-all duration-200 group relative ${activeTab === item.id
-                                ? 'bg-blue-600/20 text-blue-400'
-                                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                            ? 'bg-blue-50 text-blue-600'
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                             } ${isCollapsed ? 'justify-center' : ''}`}
                     >
-                        <item.icon className={`w-5 h-5 ${activeTab === item.id ? 'text-blue-400' : ''}`} />
+                        <item.icon className={`w-5 h-5 ${activeTab === item.id ? 'text-blue-600' : ''}`} />
 
                         {!isCollapsed && (
                             <span className="ml-3 font-medium text-sm">{item.label}</span>
@@ -55,32 +64,26 @@ const LeftSidebar = ({ isCollapsed, setIsCollapsed, activeTab, setActiveTab }) =
             </nav>
 
             {/* Bottom Actions */}
-            <div className="p-4 border-t border-gray-800 space-y-2">
-                <button className={`w-full flex items-center p-3 rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all ${isCollapsed ? 'justify-center' : ''}`}>
+            <div className="p-4 border-t border-gray-100 space-y-2">
+                <button className={`w-full flex items-center p-3 rounded-xl text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-all ${isCollapsed ? 'justify-center' : ''}`}>
                     <Settings className="w-5 h-5" />
                     {!isCollapsed && <span className="ml-3 font-medium text-sm">Settings</span>}
                 </button>
 
-                <button className={`w-full flex items-center p-3 rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white transition-all ${isCollapsed ? 'justify-center' : ''}`}>
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
+                <button className={`w-full flex items-center p-3 rounded-xl text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-all ${isCollapsed ? 'justify-center' : ''}`}>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-sm">
                         JD
                     </div>
                     {!isCollapsed && (
                         <div className="ml-3 text-left overflow-hidden">
-                            <p className="text-sm font-medium text-white truncate">Jane Doe</p>
-                            <p className="text-xs text-gray-500 truncate">Pro Plan</p>
+                            <p className="text-sm font-bold text-gray-700 truncate">Jane Doe</p>
+                            <p className="text-xs text-gray-400 truncate">Pro Plan</p>
                         </div>
                     )}
                 </button>
             </div>
 
-            {/* Collapse Toggle */}
-            <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute -right-3 top-10 w-6 h-6 bg-gray-800 border border-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-all z-30"
-            >
-                {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
-            </button>
+
         </motion.div>
     );
 };

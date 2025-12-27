@@ -1,0 +1,83 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Dark Background with Soft Gradient (Subtle) -->
+    <rect width="512" height="512" rx="96" fill="#0f172a"/>
+    <rect width="512" height="512" rx="96" fill="url(#bgGradient)" fill-opacity="0.2"/>
+    
+    <defs>
+        <!-- Background Gradient -->
+        <linearGradient id="bgGradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#1e293b" />
+            <stop offset="100%" stop-color="#0f172a" />
+        </linearGradient>
+
+        <!-- Primary Brand Gradient (Electric Blue -> Cyan) -->
+        <linearGradient id="brandGradient1" x1="100" y1="100" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+             <stop offset="0%" stop-color="#22d3ee" /> <!-- Cyan-400 -->
+            <stop offset="100%" stop-color="#3b82f6" /> <!-- Blue-500 -->
+        </linearGradient>
+        
+        <!-- Secondary Brand Gradient (Indigo -> Violet) -->
+        <linearGradient id="brandGradient2" x1="100" y1="400" x2="400" y2="100" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#818cf8" /> <!-- Indigo-400 -->
+            <stop offset="100%" stop-color="#6366f1" /> <!-- Indigo-500 -->
+        </linearGradient>
+
+        <!-- Glow Filter -->
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="10" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+    </defs>
+
+    <!-- Logo Mark: The "Sparring S" / Dialogue Interchange -->
+    <g transform="translate(256, 256) scale(0.85)">
+        
+        <!-- Shape 1: Top Right (The AI/Interviewer) -->
+        <!-- A fluid, speech-bubble-like form curving to make the top of the S -->
+        <path d="M 0 -40
+                 C 80 -40, 140 -80, 140 -150
+                 C 140 -205, 95 -250, 40 -250
+                 C -60 -250, -140 -160, -140 -60
+                 C -140 -10, -100 20, -50 40
+                 L 0 -40 Z"
+              fill="url(#brandGradient1)"
+              style="filter: url(#glow);"
+              transform="rotate(0)"
+        />
+        
+        <!-- Shape 2: Bottom Left (The User/Candidate) -->
+        <!-- Interlocking shape mirroring the first to complete the S and imply cycle/exchange -->
+        <path d="M 0 40
+                 C -80 40, -140 80, -140 150
+                 C -140 205, -95 250, -40 250
+                 C 60 250, 140 160, 140 60
+                 C 140 10, 100 -20, 50 -40
+                 L 0 40 Z"
+              fill="url(#brandGradient2)"
+              style="filter: url(#glow);"
+        />
+
+        <!-- Central Connection / Spark (Optional, keeps it cleaner without) -->
+        <!-- The negative space between them forms a dynamic angled channel -->
+
+        <!-- Polished Overlay for Glassmorphism feel -->
+         <path d="M 0 -40
+                 C 80 -40, 140 -80, 140 -150
+                 C 140 -180, 120 -220, 40 -250
+                 C 100 -220, 120 -180, 120 -150
+                 C 120 -100, 80 -60, 0 -60
+                 Z"
+              fill="white"
+              fill-opacity="0.1"
+        />
+         <path d="M 0 40
+                 C -80 40, -140 80, -140 150
+                 C -140 180, -120 220, -40 250
+                 C -100 220, -120 180, -120 150
+                 C -120 100, -80 60, 0 60
+                 Z"
+              fill="white"
+              fill-opacity="0.1"
+        />
+    </g>
+</svg>

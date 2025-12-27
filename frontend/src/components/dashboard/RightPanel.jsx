@@ -16,7 +16,7 @@ const RightPanel = ({ persona, languages, company, jobVariant }) => {
     };
 
     return (
-        <div className="w-80 h-screen bg-white border-l border-gray-200 flex flex-col flex-shrink-0 z-10 shadow-sm">
+        <div className="w-80 h-full bg-white flex flex-col rounded-2xl shadow-sm border border-white/50 relative z-10 flex-shrink-0">
 
             {/* 1. Persona Card (Top) */}
             <div className="p-6 border-b border-gray-100">

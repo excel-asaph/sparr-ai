@@ -10,73 +10,88 @@ import SparrLoader from '../components/SparrLoader';
 // Import Shared Data
 import { PERSONAS, LANGUAGE_NAMES } from '../data/personas';
 
+// ... imports
+import { useAuth } from '../contexts/AuthContext';
+
 const LandingPage = () => {
   const navigate = useNavigate();
-  const [showScroll, setShowScroll] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const { loginAsGuest, currentUser } = useAuth();
 
-  // Step State
+  // UI State
   const [step, setStep] = useState(1);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showScroll, setShowScroll] = useState(true);
 
-  // Role State
-  const [selectedRole, setSelectedRole] = useState('');
+  // Wizard Data State
+  const [selectedRole, setSelectedRole] = useState(null);
   const [isOtherSelected, setIsOtherSelected] = useState(false);
   const [customRole, setCustomRole] = useState('');
 
-  // Experience State
-  const [selectedExperience, setSelectedExperience] = useState('');
+  const [selectedExperience, setSelectedExperience] = useState(null);
   const [isOtherExperienceSelected, setIsOtherExperienceSelected] = useState(false);
   const [customExperience, setCustomExperience] = useState('');
 
-  // Company State
-  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState(null);
   const [isOtherCompanySelected, setIsOtherCompanySelected] = useState(false);
   const [customCompany, setCustomCompany] = useState('');
 
-  // Job Variant State
-  const [selectedJobVariant, setSelectedJobVariant] = useState(null);
+  // Job Search State
   const [jobVariants, setJobVariants] = useState([]);
-  const [lastJobParams, setLastJobParams] = useState(null); // Cache key
   const [isLoadingJobs, setIsLoadingJobs] = useState(false);
   const [jobError, setJobError] = useState(null);
-  const [isCreatingSession, setIsCreatingSession] = useState(false); // Loading for Step 6
+  const [lastJobParams, setLastJobParams] = useState(null);
+  const [selectedJobVariant, setSelectedJobVariant] = useState(null);
 
-  // Resume Upload State (Step 5)
+  // Resume State
   const [resumeFile, setResumeFile] = useState(null);
+  const [uploadStage, setUploadStage] = useState('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStage, setUploadStage] = useState('idle'); // 'idle' | 'uploading' | 'uploaded'
   const [uploadError, setUploadError] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisDone, setAnalysisDone] = useState(false);
   const [resumeAnalysisResult, setResumeAnalysisResult] = useState(null);
 
+  // Session State
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+
+  // Initialize Guest Session
+  useEffect(() => {
+    if (!currentUser) {
+      loginAsGuest().catch(err => console.error("Guest Init Failed", err));
+    }
+  }, [currentUser, loginAsGuest]);
+
+  // Handlers
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
     setIsOtherSelected(false);
+    setCustomRole('');
   };
 
   const handleOtherSelect = () => {
-    setSelectedRole('');
+    setSelectedRole(null);
     setIsOtherSelected(true);
   };
 
-  const handleExperienceSelect = (exp) => {
-    setSelectedExperience(exp);
+  const handleExperienceSelect = (level) => {
+    setSelectedExperience(level);
     setIsOtherExperienceSelected(false);
+    setCustomExperience('');
   };
 
   const handleOtherExperienceSelect = () => {
-    setSelectedExperience('');
+    setSelectedExperience(null);
     setIsOtherExperienceSelected(true);
   };
 
   const handleCompanySelect = (company) => {
     setSelectedCompany(company);
     setIsOtherCompanySelected(false);
+    setCustomCompany('');
   };
 
   const handleOtherCompanySelect = () => {
-    setSelectedCompany('');
+    setSelectedCompany(null);
     setIsOtherCompanySelected(true);
   };
 
@@ -87,16 +102,17 @@ const LandingPage = () => {
     const companyToPass = isOtherCompanySelected ? customCompany : selectedCompany;
 
     if (step === 1) {
+      // ... existing step 1 logic ...
       if (roleToPass) {
         setStep(2);
       }
     } else if (step === 2) {
+      // ... existing step 2 logic ...
       if (expToPass) {
         setStep(3);
       }
     } else if (step === 3) {
-      // Step 3 Transition: Fetch Jobs
-
+      // ... existing step 3 logic ...
       // Caching Logic: If input matches last fetch, don't refetch
       const currentParams = JSON.stringify({ role: roleToPass, level: expToPass, company: companyToPass });
 
@@ -189,19 +205,34 @@ const LandingPage = () => {
             if (data.system_prompt) {
               console.log("Agent Connected! Prompt Generated.");
 
-              // 2. Navigate Immediately (Optimistic Persistence in Dashboard)
-              navigate('/dashboard', {
-                state: {
-                  // Context for Saving (in Dashboard)
-                  jobContext,
-                  resumeContext,
-                  persona: selectedPersona,
-                  resumeFile, // Pass file for handling in Dashboard
+              const pendingSessionData = {
+                // Context for Saving (in Dashboard)
+                jobContext,
+                resumeContext,
+                persona: selectedPersona,
+                resumeFile, // Pass file for handling in Dashboard
 
-                  // Agent Brain (for VoiceOrb)
-                  systemPrompt: data.system_prompt
-                }
-              });
+                // Agent Brain (for VoiceOrb)
+                systemPrompt: data.system_prompt
+              };
+
+              // 2. Auth Check & Redirect
+              if (!currentUser || currentUser.isAnonymous) {
+                // Not logged in (or Guest) -> Force Login to Save
+                navigate('/login', {
+                  state: {
+                    from: { pathname: '/dashboard' },
+                    // Pass Context so it persists after login
+                    pendingSession: pendingSessionData
+                  }
+                });
+              } else {
+                // Already authenticated -> Go to Dashboard
+                navigate('/dashboard', {
+                  state: pendingSessionData
+                });
+              }
+
             } else {
               throw new Error("Failed to generate agent instructions.");
             }

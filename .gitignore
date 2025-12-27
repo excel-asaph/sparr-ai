@@ -28,3 +28,4 @@ dist-ssr
 serviceAccountKey.json
 key.json
 *.txt
+*firebase_config.js

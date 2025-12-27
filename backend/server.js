@@ -16,6 +16,7 @@ const { VertexAI } = require('@google-cloud/vertexai');
 const fs = require('fs');
 const { db, uploadFileToStorage } = require('./services/firebase');
 const { v4: uuidv4 } = require('uuid'); // We need uuid for IDs
+const authenticate = require('./middleware/authMiddleware');
 
 const app = express();
 app.use(cors());
@@ -212,31 +213,58 @@ app.post('/api/analyze-resume', upload.single('resume'), async (req, res) => {
 
 // --- API: CREATE INTERVIEW (NEW) ---
 // --- API: CREATE INTERVIEW (NEW with Upload) ---
-app.post('/api/interviews', upload.single('resume'), async (req, res) => {
+// --- API: CREATE INTERVIEW (NEW with Upload) ---
+app.post('/api/interviews', authenticate, upload.single('resume'), async (req, res) => {
   try {
     // Parse JSON fields (Multer sends them as strings)
     const jobContext = JSON.parse(req.body.jobContext);
     const persona = JSON.parse(req.body.persona);
     let resumeContext = JSON.parse(req.body.resumeContext);
+    const parentId = req.body.parentId;
+
+    const userId = req.user.uid; // Secured User ID
 
     // 1. Handle File Upload (If present)
     if (req.file) {
-      const storagePath = `users/guest/interviews/${Date.now()}_${req.file.originalname}`;
+      const storagePath = `users/${userId}/interviews/${Date.now()}_${req.file.originalname}`; // User-scoped path
       const storageUrl = await uploadFileToStorage(req.file.buffer, storagePath);
-      resumeContext.storageUrl = storageUrl; // Update context with real URL
+      resumeContext.storageUrl = storageUrl;
       console.log("Resume Uploaded to:", storageUrl);
     }
 
-    // 2. Create Interview Document
     const interviewId = uuidv4();
+
+    // Linked List Logic
+    if (parentId) {
+      const parentDoc = await db.collection('interviews').doc(parentId).get();
+      if (!parentDoc.exists) {
+        return res.status(400).json({ error: 'Parent interview not found.' });
+      }
+      const parentData = parentDoc.data();
+      // Verify Parent Ownership
+      if (parentData.userId !== userId) {
+        return res.status(403).json({ error: 'Forbidden: Cannot link to an interview you do not own.' });
+      }
+
+      if (parentData.childId) {
+        return res.status(400).json({ error: 'This interview already has a follow-up. Please use the latest session in the chain.' });
+      }
+      // Update parent to link child
+      await db.collection('interviews').doc(parentId).update({ childId: interviewId });
+    }
+
+    // 2. Create Interview Document
     const interviewData = {
       id: interviewId,
-      userId: 'guest_user', // Placeholder
+      userId, // Use Actual UID
+
       createdAt: new Date().toISOString(),
       status: 'created',
-      jobContext,    // { role, company, level, variant }
-      resumeContext, // { storageUrl, weaknesses }
-      persona        // Full persona object snapshot
+      jobContext,
+      resumeContext,
+      persona,
+      parentId: parentId || null,
+      childId: null
     };
 
     // Save to Firestore
@@ -246,25 +274,52 @@ app.post('/api/interviews', upload.single('resume'), async (req, res) => {
     console.log(`Interview Created: ${interviewId}`);
     fs.writeFileSync('debug_latest_interview.json', JSON.stringify(interviewData, null, 2));
 
-    res.json({ interviewId });
+    res.json({ interviewId, resumeContext }); // Return updated context with URL
   } catch (error) {
     console.error("Create Interview Error:", error);
     res.status(500).json({ error: "Failed to create interview session" });
   }
 });
 
-// --- API 3: GENERATE AGENT PROMPT ---
+// --- API: LIST INTERVIEWS ---
+app.get('/api/interviews', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const snapshot = await db.collection('interviews')
+      .where('userId', '==', userId)
+      .get(); // Get all for user (temporarily fetch all to sort in memory)
+
+    let interviews = [];
+    snapshot.forEach(doc => {
+      interviews.push(doc.data());
+    });
+
+    // In-memory sort (Newest first)
+    interviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Return ALL interviews (No limit)
+    // interviews = interviews.slice(0, 10);
+
+    res.json({ interviews });
+  } catch (error) {
+    console.error("List Interviews Error:", error);
+    res.status(500).json({ error: "Failed to fetch interviews" });
+  }
+});
+
+
+// --- API 3: GENERATE AGENT PROMPT (NEW SESSIONS ONLY) ---
 app.post('/api/generate-system-prompt', async (req, res) => {
   const { company, role, level, jobArchetype, weaknesses, persona, personaDescription, personaStyle } = req.body;
 
   const prompt = `
     You are an expert Prompt Engineer. 
-    Task: Write a highly detailed and immersive SYSTEM PROMPT for an AI Voice Agent that will act as an interviewer.
+    Task: Write a highly detailed and immersive SYSTEM PROMPT for an AI Voice Agent that will act as an interviewer for a FIRST-TIME interview.
     
     Input Data:
     - Company: ${company}
     - Role: ${role} (${level})
-    - Team: ${jobArchetype.title}
+    - Team: ${jobArchetype.type}
     - Persona Name: ${persona}
     - Persona Description: ${personaDescription}
     - Persona Style: ${personaStyle}
@@ -300,14 +355,14 @@ app.post('/api/generate-system-prompt', async (req, res) => {
        - If they hesitate, press harder.
 
     7. **Scenario Generation**:
-       - Create a short, realistic problem scenario relevant to the ${jobArchetype.title} team.
+       - Create a short, realistic problem scenario relevant to the ${jobArchetype.type} team.
        - Ask the candidate how they would handle it.
 
     8. **Dynamic Flow & Termination Rules**:
        - **Silence Protocol**: If the user is silent for a while, ask "Are you still there?" (in character). If silence continues, say a closing line (e.g., "I guess we're done here") and END the interview.
        - **The "Goodbye" Protocol**: When you decide the interview is over (due to mismatch, success, or timeout), deliver a final closing line and then STOP speaking.
        - **Red Flag Rule**: If the user gives a non-answer, uses buzzwords without substance, or lies, call them out immediately.
-       - **Mismatch Rule**: If the user clearly lacks the skills for this specific Team (${jobArchetype.title}), decide whether to end the interview or pivot, based on your persona.
+       - **Mismatch Rule**: If the user clearly lacks the skills for this specific Team (${jobArchetype.type}), decide whether to end the interview or pivot, based on your persona.
 
     9. **Tone & Style**: 
        - Spoken conversation. Short sentences. Natural fillers (based on persona).
@@ -319,7 +374,7 @@ app.post('/api/generate-system-prompt', async (req, res) => {
 
   try {
     const data = await generateJSON(prompt);
-    console.log("--- Generated System Prompt ---");
+    console.log("--- Generated System Prompt (New Session) ---");
     console.log(data.system_prompt ? data.system_prompt.substring(0, 100) + "..." : "NO PROMPT GENERATED");
     res.json(data);
   } catch (error) {
@@ -327,5 +382,165 @@ app.post('/api/generate-system-prompt', async (req, res) => {
     res.status(500).json({ error: "Prompt generation failed" });
   }
 });
+
+// --- API 4: GENERATE FOLLOW-UP PROMPT (From Interview Document) ---
+app.post('/api/generate-followup-prompt', async (req, res) => {
+  const { sourceInterview, persona, personaDescription, personaStyle, previousStats, previousFeedback, previousRecommendations } = req.body;
+
+  try {
+    // Extract from interview object (already passed from frontend)
+    const { jobContext, resumeContext } = sourceInterview;
+    const company = jobContext.company;
+    const role = jobContext.role;
+    const level = jobContext.level;
+    const jobArchetype = jobContext.variant || {};
+    const weaknesses = resumeContext.weaknesses || [];
+
+    const prompt = `
+    You are an expert Prompt Engineer. 
+    Task: Write a highly detailed and immersive SYSTEM PROMPT for an AI Voice Agent that will act as an interviewer for a FOLLOW-UP session.
+    
+    Input Data:
+    - Company: ${company}
+    - Role: ${role} (${level})
+    - Team: ${jobArchetype.type}
+    - Persona Name: ${persona}
+    - Persona Description: ${personaDescription}
+    - Persona Style: ${personaStyle}
+    - Candidate Weaknesses (From Resume): ${JSON.stringify(weaknesses)}
+    - Previous Session Stats: ${previousStats ? JSON.stringify(previousStats) : 'Not included in this workflow'}
+    - Previous Feedback: ${previousFeedback || 'Not provided'}
+    - Previous Recommendations: ${previousRecommendations ? JSON.stringify(previousRecommendations) : 'Not included in this workflow'}
+    
+    The generated System Prompt must instruct the AI to:
+    1. **Embody the Persona**: Adopt the tone, vocabulary, and attitude of the "${persona}" completely. 
+       - Description: ${personaDescription}
+       - Style: ${personaStyle}
+       - Never break character.
+       - *Crucial*: All rules below must be interpreted THROUGH this persona.
+
+    2. **Phase 0: Follow-Up Context (MANDATORY)**:
+       - This is a FOLLOW-UP interview, not a first-time session.
+       - Reference the previous feedback: "${previousFeedback}"
+       ${previousStats ? `- Acknowledge their past performance metrics: ${JSON.stringify(previousStats)}` : ''}
+       ${previousRecommendations ? `- Ask if they've reviewed the recommendations: ${JSON.stringify(previousRecommendations)}` : ''}
+       - Your goal is to verify improvement and probe deeper into previously weak areas.
+
+    3. **Phase 1: The Introduction (MANDATORY)**: 
+       - Start by acknowledging this is a follow-up.
+       - Example: "Welcome back. I reviewed your last session. Let's see if you've improved."
+       - Do NOT dive straight into technical questions. Establish continuity first.
+
+    4. **Contextual Awareness**: You are interviewing a candidate for a ${level} position. 
+       - If "Senior" or above: Be demanding, expect mastery and architectural thinking.
+       - If "Junior": Focus on growth, learning, and addressing previous gaps.
+
+    5. **The "Evolution Check" Strategy**: 
+       - Based on previous feedback, design questions that directly test if they've addressed their weaknesses.
+       - If they claim improvement, drill down with "Show me" or "Prove it with a concrete example."
+
+    6. **The "Drill Down" Technique**: 
+       - Never accept surface-level answers. Always ask "Why?" or "How exactly?" or "What are the trade-offs?"
+       - **Internals Check**: If they mention a tool, ask how it works *under the hood*.
+
+    7. **Scenario Generation**:
+       - Create a short, realistic problem scenario relevant to the ${jobArchetype.type} team.
+       - Make it slightly harder than the first session.
+
+    8. **Dynamic Flow & Termination Rules**:
+       - **Silence Protocol**: If the user is silent for a while, ask "Are you still there?" (in character). If silence continues, end the interview.
+       - **The "Goodbye" Protocol**: When you decide the interview is over, deliver a final closing line and STOP speaking.
+       - **Red Flag Rule**: If they haven't improved or are regressing, call it out.
+
+    9. **Tone & Style**: 
+       - Spoken conversation. Short sentences. Natural fillers (based on persona).
+       - Be neutral or skeptical. Do NOT be overly encouraging unless truly warranted.
+
+    Output JSON format:
+    { "system_prompt": "You are [Persona Name]..." }
+  `;
+
+    const data = await generateJSON(prompt);
+    console.log("--- Generated Follow-Up System Prompt ---");
+    console.log(data.system_prompt ? data.system_prompt.substring(0, 100) + "..." : "NO PROMPT GENERATED");
+    res.json(data);
+  } catch (error) {
+    console.error("Follow-Up Prompt Error:", error);
+    res.status(500).json({ error: "Follow-up prompt generation failed" });
+  }
+});
+
+// --- API: DELETE INTERVIEW ---
+app.delete('/api/interviews/:id', authenticate, async (req, res) => {
+  const { id } = req.params;
+  const { cascade } = req.query; // 'true'
+  const userId = req.user.uid;
+
+  try {
+    const interviewRef = db.collection('interviews').doc(id);
+    const doc = await interviewRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Interview not found' });
+    }
+
+    const data = doc.data();
+
+    // Verification: Ensure User Owns this Interview
+    if (data.userId !== userId) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this interview' });
+    }
+
+    const batch = db.batch();
+    batch.delete(interviewRef);
+
+    if (cascade === 'true') {
+      console.log(`Cascading delete for ${id} (Child: ${data.childId}, Parent: ${data.parentId})`);
+
+      // 1. Forward Traverse (Children)
+      let nextId = data.childId;
+      let depth = 0;
+      const processed = new Set([id]);
+
+      while (nextId && depth < 20 && !processed.has(nextId)) {
+        const childRef = db.collection('interviews').doc(nextId);
+        const childDoc = await childRef.get();
+        if (childDoc.exists) {
+          batch.delete(childRef);
+          processed.add(nextId);
+          nextId = childDoc.data().childId;
+          depth++;
+        } else {
+          break;
+        }
+      }
+
+      // 2. Backward Traverse (Parents)
+      let prevId = data.parentId;
+      depth = 0;
+
+      while (prevId && depth < 20 && !processed.has(prevId)) {
+        const parentRef = db.collection('interviews').doc(prevId);
+        const parentDoc = await parentRef.get();
+        if (parentDoc.exists) {
+          batch.delete(parentRef);
+          processed.add(prevId);
+          prevId = parentDoc.data().parentId;
+          depth++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    await batch.commit();
+    console.log(`Deleted interview ${id} (Cascade: ${cascade})`);
+    res.json({ message: 'Deleted successfully' });
+  } catch (error) {
+    console.error("Delete Error:", error);
+    res.status(500).json({ error: "Failed to delete" });
+  }
+});
+
 
 app.listen(3000, () => console.log('✅ Backend running on http://localhost:3000'));
