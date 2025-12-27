@@ -213,8 +213,7 @@ const ReportsTab = ({ onNavigateToResumes }) => {
                                 <div className="flex items-start gap-3">
                                     {/* Avatar / Icon */}
                                     <div
-                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm"
-                                        style={{ backgroundColor: session.companyColor }}
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm bg-gray-900"
                                     >
                                         {session.company.charAt(0)}
                                     </div>

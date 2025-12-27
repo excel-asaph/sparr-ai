@@ -91,7 +91,7 @@ const ResumesView = ({ interviews = [] }) => {
                                     }`}
                             >
                                 <div className="flex items-start gap-3">
-                                    <div className={`p-2 rounded-lg ${selectedResume?.id === resume.id ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
+                                    <div className={`p-2 rounded-lg ${selectedResume?.id === resume.id ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500'}`}>
                                         <FileText className="w-5 h-5" />
                                     </div>
                                     <div className="min-w-0 flex-1">

@@ -14,6 +14,7 @@ const FeedbackWaveform = ({ highlights = [], duration = "15:00", agentName = "AI
     const bars = Array.from({ length: BAR_COUNT }, () => Math.max(20, Math.random() * 100));
 
     const [activeHighlight, setActiveHighlight] = useState(null);
+    const [hoveredHighlight, setHoveredHighlight] = useState(null);
 
     const getIcon = (type) => {
         switch (type) {
@@ -56,11 +57,11 @@ const FeedbackWaveform = ({ highlights = [], duration = "15:00", agentName = "AI
                 </button>
 
                 {/* Bars */}
-                <div className="flex-1 flex items-center justify-between gap-1 h-16 ml-16 mr-4 opacity-40 mask-image-gradient">
+                <div className="flex-1 flex items-center justify-between gap-1 h-16 ml-16 mr-4 opacity-40 mask-image-gradient w-full min-w-0">
                     {bars.map((height, i) => (
                         <div
                             key={i}
-                            className="w-1.5 bg-gray-400 rounded-full transition-all hover:bg-blue-400"
+                            className="bg-gray-400 rounded-full transition-all hover:bg-blue-400 flex-1 min-w-[3px] max-w-[6px]"
                             style={{ height: `${height}%` }}
                         />
                     ))}
@@ -71,19 +72,21 @@ const FeedbackWaveform = ({ highlights = [], duration = "15:00", agentName = "AI
                     const time = parseDuration(h.timestamp);
                     const percent = (time / totalSeconds) * 100;
                     const isActive = activeHighlight === i;
+                    const isHovered = hoveredHighlight === i;
 
                     return (
                         <div
                             key={i}
                             className="absolute top-1/2 transform -translate-y-1/2 group"
                             style={{ left: `calc(${percent}% + 60px)`, zIndex: 30 }} // Offset for play button
-                            onMouseEnter={() => setActiveHighlight(i)}
-                            onMouseLeave={() => setActiveHighlight(null)}
+                            onClick={() => setActiveHighlight(isActive ? null : i)}
+                            onMouseEnter={() => setHoveredHighlight(i)}
+                            onMouseLeave={() => setHoveredHighlight(null)}
                         >
                             {/* Pin Head */}
                             <div className={`
                                 w-8 h-8 rounded-full border-2 border-white shadow-md flex items-center justify-center cursor-pointer transition-transform hover:scale-110
-                                ${isActive ? 'bg-white scale-125 z-40' : 'bg-gray-50'}
+                                ${isActive ? 'bg-white scale-125 z-40 ring-4 ring-blue-100' : 'bg-gray-50'}
                             `}>
                                 {getIcon(h.type)}
                             </div>
@@ -91,21 +94,19 @@ const FeedbackWaveform = ({ highlights = [], duration = "15:00", agentName = "AI
                             {/* Pin Line */}
                             <div className={`absolute top-8 left-1/2 w-0.5 h-full bg-gray-300 -translate-x-1/2 -z-10 ${isActive ? 'bg-blue-500' : ''}`} style={{ height: '30px' }}></div>
 
-                            {/* Tooltip */}
+                            {/* Scanning Tooltip (Hover Only) */}
                             <AnimatePresence>
-                                {isActive && (
+                                {isHovered && !isActive && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 10, scale: 0.9, x: "-50%" }}
                                         animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
                                         exit={{ opacity: 0, y: 10, scale: 0.9, x: "-50%" }}
-                                        className="absolute bottom-full mb-3 left-1/2 w-64 bg-gray-900 text-white text-xs p-3 rounded-xl shadow-xl z-50"
+                                        className="absolute bottom-full mb-3 left-1/2 whitespace-nowrap bg-gray-900/90 backdrop-blur text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-xl z-50 flex items-center gap-2"
                                     >
-                                        <div className="font-bold mb-1 flex justify-between">
-                                            <span>{h.timestamp}</span>
-                                            <span className="opacity-75 capitalize">{h.type}</span>
-                                        </div>
-                                        <p className="leading-relaxed opacity-90">{h.text}</p>
-                                        <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 transform rotate-45"></div>
+                                        <span className="opacity-75">{h.timestamp}</span>
+                                        <span className="w-0.5 h-2 bg-gray-600"></span>
+                                        <span className="capitalize text-white">{h.type}</span>
+                                        <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900/90 transform rotate-45"></div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -119,8 +120,15 @@ const FeedbackWaveform = ({ highlights = [], duration = "15:00", agentName = "AI
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col md:flex-row"
+                    className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col md:flex-row relative"
                 >
+                    <button
+                        onClick={() => setActiveHighlight(null)}
+                        className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 md:hidden"
+                    >
+                        <XCircle className="w-5 h-5" />
+                    </button>
+
                     {/* Context Column */}
                     <div className="p-5 md:w-2/3 border-b md:border-b-0 md:border-r border-gray-100 bg-gray-50/30">
                         {highlights[activeHighlight].qaContext ? (
@@ -159,7 +167,7 @@ const FeedbackWaveform = ({ highlights = [], duration = "15:00", agentName = "AI
                 </motion.div>
             ) : (
                 <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center text-sm text-gray-400">
-                    Hover over the pins to view specific feedback moments.
+                    Click a pin to view the transcript and detailed feedback.
                 </div>
             )}
         </div>
