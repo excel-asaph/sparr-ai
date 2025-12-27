@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SessionCard from './SessionCard';
+import { BarChart2, Calendar } from 'lucide-react';
 import ReportDetail from './ReportDetail';
 
 // Mock data for MVP
@@ -140,45 +140,83 @@ const ReportsTab = () => {
     const [selectedSession, setSelectedSession] = useState(MOCK_SESSIONS[0]);
 
     return (
-        <div className="w-full h-full flex gap-4 p-8">
-            {/* Left Panel: Session Log */}
-            <motion.div
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                // Bento Card Style: White, High Radius, Subtle Border, No Blur needed if opaque
-                className="w-[30%] h-full bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden flex flex-col"
-            >
-                {/* Header */}
-                <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-                    <h2 className="text-lg font-bold text-gray-800 tracking-tight">Interview History</h2>
-                    <p className="text-xs font-medium text-gray-500 mt-1 uppercase tracking-wide">{MOCK_SESSIONS.length} sessions recorded</p>
+        <div className="h-full w-full flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+            {/* LEFT PANE: Session List */}
+            <div className="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50">
+                <div className="p-4 border-b border-gray-200 bg-white">
+                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <BarChart2 className="w-5 h-5 text-gray-600" />
+                        Interview Reports
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-1">
+                        Select a session to view detailed performance metrics.
+                    </p>
                 </div>
 
-                {/* Session List */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                    {MOCK_SESSIONS.map((session) => (
-                        <SessionCard
-                            key={session.id}
-                            session={session}
-                            isActive={selectedSession.id === session.id}
-                            onClick={() => setSelectedSession(session)}
-                        />
-                    ))}
-                </div>
-            </motion.div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                    {MOCK_SESSIONS.map((session) => {
+                        const isSelected = selectedSession.id === session.id;
+                        return (
+                            <button
+                                key={session.id}
+                                onClick={() => setSelectedSession(session)}
+                                className={`w-full text-left p-3 rounded-xl transition-all duration-200 border ${isSelected
+                                    ? 'bg-white border-blue-500 shadow-md ring-1 ring-blue-100'
+                                    : 'bg-white border-gray-100 hover:border-blue-300 hover:shadow-sm'
+                                    }`}
+                            >
+                                <div className="flex items-start gap-3">
+                                    {/* Avatar / Icon */}
+                                    <div
+                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm"
+                                        style={{ backgroundColor: session.companyColor }}
+                                    >
+                                        {session.company.charAt(0)}
+                                    </div>
 
-            {/* Right Panel: Deep Dive */}
-            <motion.div
-                initial={{ x: 20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-                className="flex-1 h-full"
-            >
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex justify-between items-start">
+                                            <h3 className={`font-semibold text-sm truncate ${isSelected ? 'text-gray-900' : 'text-gray-700'}`}>
+                                                {session.role}
+                                            </h3>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${session.overallScore >= 80 ? 'bg-green-50 text-green-600' :
+                                                session.overallScore >= 60 ? 'bg-yellow-50 text-yellow-600' : 'bg-red-50 text-red-600'
+                                                }`}>
+                                                {session.overallScore}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                                                <Calendar className="w-3 h-3" />
+                                                {new Date(session.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            </span>
+                                            <span className="text-[10px] text-gray-400">@ {session.company}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* RIGHT PANE: Report Detail */}
+            <div className="flex-1 bg-gray-50/50 flex flex-col relative overflow-hidden">
                 <AnimatePresence mode="wait">
-                    <ReportDetail key={selectedSession.id} session={selectedSession} />
+                    <motion.div
+                        key={selectedSession.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className="h-full w-full overflow-y-auto"
+                    >
+                        {/* Pass session prop correctly */}
+                        <ReportDetail session={selectedSession} />
+                    </motion.div>
                 </AnimatePresence>
-            </motion.div>
+            </div>
         </div>
     );
 };
