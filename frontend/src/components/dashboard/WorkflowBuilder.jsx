@@ -18,8 +18,7 @@ import {
     ListChecks, CircleDashed, ChevronDown, BarChart3, Lightbulb, MessageSquareText, UserCircle2
 } from 'lucide-react';
 import { getLayoutedElements } from '../../utils/layoutUtils';
-import { generateMockReport } from '../../utils/reportSimulator';
-import { PERSONAS } from '../../data/personas';
+import { PERSONAS, LANGUAGE_NAMES } from '../../data/personas';
 import HistoryExplorer from './HistoryExplorer';
 import LeftSidebar from './LeftSidebar';
 
@@ -129,7 +128,7 @@ const WorkflowHUD = ({ isLocked, setIsLocked, onLayout, onUndo, onRedo, canUndo,
 
 // Custom Node Component
 const CustomNode = ({ id, data, selected }) => {
-    const { type, nodeData, mockReport, onDelete, updateData, hasOutgoingConnection, hasIncomingConnection } = data;
+    const { type, nodeData, reportData, onDelete, updateData, hasOutgoingConnection, hasIncomingConnection, isConnecting } = data;
     const [isHovered, setIsHovered] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -140,6 +139,7 @@ const CustomNode = ({ id, data, selected }) => {
         stats: { label: 'Statistics', icon: BarChart3, color: 'text-emerald-700', bgColor: 'bg-emerald-50' },
         recommendations: { label: 'Recommendations', icon: Lightbulb, color: 'text-amber-700', bgColor: 'bg-amber-50' },
         persona: { label: 'Target Persona', icon: UserCircle2, color: 'text-pink-700', bgColor: 'bg-pink-50' },
+        language: { label: 'Language', icon: MessageSquare, color: 'text-cyan-700', bgColor: 'bg-cyan-50' },
     };
 
     const config = nodeConfigs[type];
@@ -153,13 +153,18 @@ const CustomNode = ({ id, data, selected }) => {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            {/* Input Handle */}
+            {/* Input Handle - Enhanced visibility for orphan nodes during connection */}
             {type !== 'source' && (
                 <Handle
                     type="target"
                     position={Position.Top}
                     isConnectable={!hasIncomingConnection}
-                    className={`w-2.5 h-2.5 !border-2 !border-white rounded-full translate-y-[-50%] ${hasIncomingConnection ? '!bg-gray-400' : '!bg-gray-300'}`}
+                    className={`rounded-full translate-y-[-50%] transition-all duration-300 ${hasIncomingConnection
+                        ? 'w-2.5 h-2.5 !border-2 !border-white !bg-gray-400'
+                        : isConnecting && !hasIncomingConnection
+                            ? 'w-5 h-5 !border-2 !border-blue-400 !bg-blue-500 animate-pulse ring-4 ring-blue-200 scale-110'
+                            : 'w-2.5 h-2.5 !border-2 !border-white !bg-gray-300 hover:!bg-blue-400 hover:scale-125'
+                        }`}
                 />
             )}
 
@@ -197,16 +202,16 @@ const CustomNode = ({ id, data, selected }) => {
                 )}
 
                 {/* Feedback */}
-                {type === 'feedback' && mockReport && (
+                {type === 'feedback' && reportData && (
                     <div className="bg-gray-50 p-2 rounded text-[10px] text-gray-600 italic border border-gray-200">
-                        "{mockReport.feedback?.summary ? mockReport.feedback.summary.substring(0, 80) : (typeof mockReport.feedback === 'string' ? mockReport.feedback.substring(0, 80) : 'No feedback available')}..."
+                        "{reportData.feedback?.summary ? reportData.feedback.summary.substring(0, 80) : (typeof reportData.feedback === 'string' ? reportData.feedback.substring(0, 80) : 'No feedback available')}..."
                     </div>
                 )}
 
                 {/* Statistics */}
-                {type === 'stats' && mockReport && (
+                {type === 'stats' && reportData && (
                     <div className="space-y-2">
-                        {Object.entries(mockReport.stats).map(([key, value]) => (
+                        {Object.entries(reportData.stats).map(([key, value]) => (
                             <div key={key} className="space-y-1">
                                 <div className="flex justify-between items-center">
                                     <span className="text-[9px] text-gray-600 uppercase font-medium">
@@ -226,9 +231,9 @@ const CustomNode = ({ id, data, selected }) => {
                 )}
 
                 {/* Recommendations */}
-                {type === 'recommendations' && mockReport && (
+                {type === 'recommendations' && reportData && (
                     <ul className="space-y-1">
-                        {mockReport.recommendations.map((rec, i) => (
+                        {reportData.recommendations.map((rec, i) => (
                             <li key={i} className="flex items-start gap-1.5 text-[10px] text-gray-600">
                                 <CheckCircle2 className="w-3 h-3 text-orange-500 shrink-0" />
                                 <span className="line-clamp-1">{rec.title}</span>
@@ -301,10 +306,79 @@ const CustomNode = ({ id, data, selected }) => {
                                             </button>
                                         ))}
                                     </div>
-                                    <div className="p-2 bg-gray-50/50 border-t border-gray-100">
-                                        <button className="w-full text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-100 py-1.5 rounded-lg transition-colors">
-                                            Manage Personas
-                                        </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                )}
+
+                {/* Language Dropdown */}
+                {type === 'language' && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-2.5 transition-all outline-none focus:ring-2 focus:ring-cyan-100 focus:border-cyan-300 group"
+                        >
+                            <div className="flex items-center gap-3">
+                                {nodeData.selectedLanguage ? (
+                                    <>
+                                        <img
+                                            src={`https://flagcdn.com/w40/${nodeData.selectedLanguage}.png`}
+                                            className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
+                                            alt=""
+                                        />
+                                        <div className="text-left">
+                                            <div className="text-sm font-semibold text-gray-900 leading-tight">
+                                                {LANGUAGE_NAMES[nodeData.selectedLanguage] || nodeData.selectedLanguage}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <span className="text-sm text-gray-500 font-medium px-1">Select Language</span>
+                                )}
+                            </div>
+                            <div className={`p-1 rounded-full text-gray-400 group-hover:text-gray-600 transition-colors ${isDropdownOpen ? 'bg-gray-200 rotate-180' : ''}`}>
+                                <ArrowDown className="w-4 h-4 transition-transform duration-300" />
+                            </div>
+                        </button>
+
+                        <AnimatePresence>
+                            {isDropdownOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                                    className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-2xl shadow-gray-200/50 z-50 overflow-hidden divide-y divide-gray-50 ring-1 ring-black/5"
+                                >
+                                    <div className="max-h-[240px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent nowheel">
+                                        {/* Dynamic: Show only selected persona's languages */}
+                                        {(nodeData.availableLanguages || ['us']).map((code) => (
+                                            <button
+                                                key={code}
+                                                onClick={() => {
+                                                    updateData({ selectedLanguage: code });
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className={`w-full flex items-center gap-3 p-3 transition-colors text-left
+                                                    ${nodeData.selectedLanguage === code ? 'bg-cyan-50 text-gray-900 group' : 'hover:bg-gray-50 text-gray-700'}
+                                                `}
+                                            >
+                                                <img
+                                                    src={`https://flagcdn.com/w40/${code}.png`}
+                                                    className={`w-8 h-8 rounded-full object-cover ring-2 ${nodeData.selectedLanguage === code ? 'ring-cyan-200' : 'ring-gray-100'}`}
+                                                    alt=""
+                                                />
+                                                <div className={`text-sm font-semibold ${nodeData.selectedLanguage === code ? 'text-cyan-900' : 'text-gray-900'}`}>
+                                                    {LANGUAGE_NAMES[code] || code}
+                                                </div>
+                                                {nodeData.selectedLanguage === code && (
+                                                    <div className="ml-auto text-cyan-500">
+                                                        <CheckCircle2 className="w-4 h-4" />
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
                                     </div>
                                 </motion.div>
                             )}
@@ -314,7 +388,7 @@ const CustomNode = ({ id, data, selected }) => {
             </div>
 
             {/* Output Handle - Styled as Plus Button */}
-            {type !== 'persona' && (
+            {type !== 'language' && (
                 <Handle
                     type="source"
                     id="source"
@@ -371,13 +445,17 @@ const CustomNode = ({ id, data, selected }) => {
     );
 };
 
-const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInterviews }) => {
+const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInterviews, onNavigateToResumes }) => {
+    // ... existing code ...
+
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [mockReport] = useState(() => generateMockReport(sourceInterview.jobContext.role));
+    // Use real report from interview
+    const reportData = sourceInterview.report || {};
     const [isExecuting, setIsExecuting] = useState(false);
     const [selectedEdge, setSelectedEdge] = useState(null);
     const [pendingConnection, setPendingConnection] = useState(null);
+    const [isConnecting, setIsConnecting] = useState(false); // Track when connection drag is in progress
 
     // React Flow hook for coordinates
     const { screenToFlowPosition, zoomIn, zoomOut } = useReactFlow();
@@ -444,7 +522,7 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
             data: {
                 type: 'source',
                 nodeData: { interview: sourceInterview },
-                mockReport,
+                reportData,
                 onDelete: () => { },
                 updateData: () => { },
                 hasOutgoingConnection: false,
@@ -461,10 +539,51 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
                     ...node.data,
                     hasOutgoingConnection: edges.some(e => e.source === node.id),
                     hasIncomingConnection: edges.some(e => e.target === node.id),
+                    isConnecting, // Pass connecting state to all nodes
                 },
             }))
         );
-    }, [edges]);
+    }, [edges, isConnecting]);
+
+    // Sync Language node's available languages when Persona selection changes
+    React.useEffect(() => {
+        const personaNode = nodes.find(n => n.data.type === 'persona');
+        const languageNode = nodes.find(n => n.data.type === 'language');
+
+        if (personaNode && languageNode) {
+            const selectedPersona = personaNode.data?.nodeData?.selectedPersona;
+            const personaLanguages = selectedPersona?.languages || ['us'];
+            const currentLanguages = languageNode.data?.nodeData?.availableLanguages || [];
+
+            // Only update if languages changed
+            if (JSON.stringify(personaLanguages) !== JSON.stringify(currentLanguages)) {
+                setNodes((nds) =>
+                    nds.map((node) => {
+                        if (node.data.type === 'language') {
+                            // Reset to first language if current selection is not available
+                            const currentSelection = node.data.nodeData?.selectedLanguage;
+                            const newSelection = personaLanguages.includes(currentSelection)
+                                ? currentSelection
+                                : personaLanguages[0] || 'us';
+
+                            return {
+                                ...node,
+                                data: {
+                                    ...node.data,
+                                    nodeData: {
+                                        ...node.data.nodeData,
+                                        availableLanguages: personaLanguages,
+                                        selectedLanguage: newSelection
+                                    }
+                                }
+                            };
+                        }
+                        return node;
+                    })
+                );
+            }
+        }
+    }, [nodes.find(n => n.data.type === 'persona')?.data?.nodeData?.selectedPersona]);
 
     // Keyboard Shortcuts for Zoom
     React.useEffect(() => {
@@ -505,11 +624,14 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
             }
             // Capture handleId here!
             setPendingConnection({ sourceNodeId: nodeId, sourceHandleId: handleId });
+            setIsConnecting(true); // Show enhanced target handles on orphan nodes
         }
     }, []);
 
     // Handle connection end - show context menu when drag is released
     const onConnectEnd = useCallback((event) => {
+        setIsConnecting(false); // Hide enhanced target handles
+
         // If we just connected to an existing node, DO NOT show the menu
         if (isConnectingToExistingNode.current) {
             isConnectingToExistingNode.current = false;
@@ -577,14 +699,24 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
             y: pendingConnection.screenY,
         });
 
+        // Get selected persona for language node
+        const personaNode = nodes.find(n => n.data.type === 'persona');
+        const selectedPersona = personaNode?.data?.nodeData?.selectedPersona;
+        const personaLanguages = selectedPersona?.languages || ['us'];
+
         const newNode = {
             id: newNodeId,
             type: 'custom',
             position,
             data: {
                 type,
-                nodeData: type === 'persona' ? { selectedPersona: PERSONAS[0] } : {},
-                mockReport,
+                nodeData: type === 'persona' ? { selectedPersona: PERSONAS[0] }
+                    : type === 'language' ? {
+                        selectedLanguage: personaLanguages[0] || 'us',
+                        availableLanguages: personaLanguages
+                    }
+                        : {},
+                reportData,
                 onDelete: () => deleteNode(newNodeId),
                 updateData: (data) => updateNodeData(newNodeId, data),
                 hasOutgoingConnection: false,
@@ -607,7 +739,7 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
         setSelectedEdge(newEdge.id);
 
         setPendingConnection(null);
-    }, [pendingConnection, mockReport, nodes]);
+    }, [pendingConnection, reportData, nodes]);
 
     const deleteNode = useCallback((id) => {
         takeSnapshot(); // Snapshot before delete
@@ -675,9 +807,12 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
             allConnected = visited.size === nodes.length;
         }
 
+        const hasLanguage = nodes.some(n => n.data.type === 'language');
+
         const items = [
             { id: 'source', label: 'Source Context', valid: !!sourceNode, message: 'Source node is the starting point' },
             { id: 'persona', label: 'Target Persona', valid: hasPersona, message: 'Select who you want to practice with' },
+            { id: 'language', label: 'Language', valid: hasLanguage, message: 'Select interview language' },
             { id: 'feedback', label: 'Feedback Logic', valid: hasFeedback, message: 'Include feedback from previous session' },
             { id: 'connectivity', label: 'Flow Connection', valid: allConnected, message: 'Connect all nodes together' }
         ];
@@ -701,19 +836,22 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
         const personaNode = nodes.find(n => n.data.type === 'persona');
         const statsNode = nodes.find(n => n.data.type === 'stats');
         const recsNode = nodes.find(n => n.data.type === 'recommendations');
+        const languageNode = nodes.find(n => n.data.type === 'language');
 
         const persona = personaNode.data.nodeData.selectedPersona;
-        const previousStats = statsNode ? mockReport.stats : null;
-        const previousRecommendations = recsNode ? mockReport.recommendations : null;
+        const selectedLanguage = languageNode?.data?.nodeData?.selectedLanguage || 'us';
+        const previousStats = statsNode ? reportData.stats : null;
+        const previousRecommendations = recsNode ? reportData.recommendations : null;
 
         const payload = {
             sourceInterview: sourceInterview,
             persona: persona.name,
             personaDescription: persona.description,
             personaStyle: persona.role,
-            previousFeedback: mockReport.feedback,
+            previousFeedback: reportData.feedback,
             previousStats,
             previousRecommendations,
+            language: selectedLanguage
         };
 
         try {
@@ -731,6 +869,7 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
                     persona,
                     systemPrompt: data.system_prompt,
                     parentId: sourceInterview.id,
+                    language: selectedLanguage
                 });
             }
         } catch (err) {
@@ -933,6 +1072,13 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
                                         <span>Persona</span>
                                     </button>
                                 )}
+                                {/* Language only shows after Persona exists */}
+                                {nodes.find(n => n.data.type === 'persona') && !nodes.find(n => n.data.type === 'language') && (
+                                    <button onClick={() => addNodeFromMenu('language')} className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 rounded-lg flex items-center gap-3 transition-colors group">
+                                        <div className="p-2 rounded-lg bg-cyan-50 group-hover:bg-cyan-100 transition-colors text-cyan-700"><MessageSquare className="w-4 h-4" /></div>
+                                        <span>Language</span>
+                                    </button>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -946,6 +1092,7 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
                                 currentSessionId={sourceInterview.id}
                                 onClose={() => setShowHistory(false)}
                                 allInterviews={allInterviews}
+                                onNavigateToResumes={onNavigateToResumes}
                             />
                         </div>
                     )}

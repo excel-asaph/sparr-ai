@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, Mic } from 'lucide-react';
 
-const VoicemailPlayer = ({ voicemail, agent }) => {
+const VoicemailPlayer = ({ voicemail, agent, message }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const audioRef = useRef(null);
@@ -42,7 +42,7 @@ const VoicemailPlayer = ({ voicemail, agent }) => {
 
             <div className="flex items-start gap-4 z-10 relative">
                 {/* Agent Avatar with Status Dot */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                     <img
                         src={agent.avatar}
                         alt={agent.name}
@@ -51,7 +51,7 @@ const VoicemailPlayer = ({ voicemail, agent }) => {
                     <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                 </div>
 
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-2">
                         <div>
                             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -77,23 +77,44 @@ const VoicemailPlayer = ({ voicemail, agent }) => {
                         </button>
 
                         {/* Simulated Waveform (Visual Only) */}
-                        <div className="flex-1 h-8 flex items-center gap-0.5 opacity-50">
-                            {[...Array(60)].map((_, i) => (
+                        <div className="flex-1 h-8 flex items-center gap-0.5 opacity-50 overflow-hidden">
+                            {[...Array(120)].map((_, i) => (
                                 <div
                                     key={i}
-                                    className={`w-1 rounded-full bg-blue-500 transition-all duration-300 ${i / 60 * 100 < progress ? 'opacity-100 h-6' : 'opacity-30 h-3'}`}
+                                    className={`w-1 rounded-full bg-blue-500 transition-all duration-300 flex-shrink-0 ${i / 120 * 100 < progress ? 'opacity-100 h-6' : 'opacity-30 h-3'}`}
                                     style={{ height: `${Math.max(20, Math.random() * 100)}%` }}
                                 />
                             ))}
                         </div>
                     </div>
 
-                    {/* Transcript Bubble */}
-                    <div className="mt-4 relative">
-                        <div className="absolute -top-1.5 left-6 w-3 h-3 bg-white border-t border-l border-gray-200 transform rotate-45"></div>
-                        <div className="bg-white rounded-xl rounded-tl-none border border-gray-200 p-4 text-sm text-gray-600 leading-relaxed shadow-sm">
-                            <span className="font-bold text-gray-900 mr-1">{agent.name}:</span>
-                            "{voicemail.transcript}"
+                    {/* Personalized Message Bubble */}
+                    <div className="mt-4 relative group">
+                        <div className="absolute -top-1.5 left-6 w-3 h-3 bg-white border-t border-l border-gray-200 transform rotate-45 group-hover:bg-gray-50 transition-colors z-10"></div>
+                        <div className="bg-white group-hover:bg-gray-50 transition-colors rounded-xl rounded-tl-none border border-gray-200 p-4 shadow-sm relative">
+                            {message ? (
+                                <div>
+                                    <p className="text-sm text-gray-700 leading-relaxed">
+                                        <span className="text-gray-900">{message.greeting}</span>{' '}
+                                        {message.context}{' '}
+                                        <span className="bg-yellow-100/70 px-1 rounded mx-0.5 text-gray-900 box-decoration-clone">
+                                            {message.observation}
+                                        </span>{' '}
+                                        {message.cta}
+                                    </p>
+                                    <div className="mt-2 flex items-center justify-end gap-1.5 opacity-60">
+                                        <span className="text-[10px] font-medium text-gray-400">
+                                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                        <div className="flex -space-x-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500/50"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-600 italic">"{voicemail.transcript}"</p>
+                            )}
                         </div>
                     </div>
                 </div>

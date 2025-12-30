@@ -5,6 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 import { SiGoogle, SiAmazon, SiMeta, SiNetflix } from 'react-icons/si';
 import { FaMicrosoft } from 'react-icons/fa';
 import SparrLoader from '../components/SparrLoader';
+import ShimmeringText from '../components/ui/ShimmeringText';
 
 
 // Import Shared Data
@@ -53,6 +54,15 @@ const LandingPage = () => {
 
   // Session State
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+
+  // Persona Selection State (Step 6)
+  const [selectedPersona, setSelectedPersona] = useState(null);
+
+  // Language Selection State (Step 7)
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
+
+  // Get available languages for selected persona
+  const availableLanguages = selectedPersona?.languages || ['us'];
 
   // Initialize Guest Session
   useEffect(() => {
@@ -123,8 +133,11 @@ const LandingPage = () => {
       }
 
       if (companyToPass) {
+        // Navigate to Step 4 IMMEDIATELY (UX improvement)
+        setStep(4);
         setIsLoadingJobs(true);
         setJobError(null);
+        setJobVariants([]); // Clear old jobs while loading
         setLastJobParams(currentParams); // Update cache key
 
         fetch('/api/generate-jobs', {
@@ -141,7 +154,6 @@ const LandingPage = () => {
             console.log("Jobs Received:", data);
             if (data.jobs && Array.isArray(data.jobs)) {
               setJobVariants(data.jobs);
-              setStep(4);
             } else {
               setJobError("Could not generate job variants. Please try again.");
               setLastJobParams(null); // Reset cache on error
@@ -164,7 +176,17 @@ const LandingPage = () => {
         setStep(6);
       }
     } else if (step === 6) {
+      // Step 6: Persona selected -> Go to language selection
       if (selectedPersona) {
+        // Auto-select first language if persona only has one
+        if (selectedPersona.languages && selectedPersona.languages.length === 1) {
+          setSelectedLanguage(selectedPersona.languages[0]);
+        }
+        setStep(7);
+      }
+    } else if (step === 7) {
+      // Step 7: Language selected -> Generate prompt and navigate
+      if (selectedLanguage) {
         // Construct the full context object
         const jobContext = {
           role: roleToPass,
@@ -190,7 +212,8 @@ const LandingPage = () => {
           weaknesses: resumeAnalysisResult?.weaknesses || [],
           persona: selectedPersona.name,
           personaDescription: selectedPersona.description,
-          personaStyle: selectedPersona.role // "The Vibe Check Peer" etc as style
+          personaStyle: selectedPersona.role, // "The Vibe Check Peer" etc as style
+          language: selectedLanguage // CRITICAL: Enforce language in system prompt
         };
 
         fetch('/api/generate-system-prompt', {
@@ -211,6 +234,7 @@ const LandingPage = () => {
                 resumeContext,
                 persona: selectedPersona,
                 resumeFile, // Pass file for handling in Dashboard
+                language: selectedLanguage, // Include selected language
 
                 // Agent Brain (for VoiceOrb)
                 systemPrompt: data.system_prompt
@@ -219,7 +243,7 @@ const LandingPage = () => {
               // 2. Auth Check & Redirect
               if (!currentUser || currentUser.isAnonymous) {
                 // Not logged in (or Guest) -> Force Login to Save
-                navigate('/login', {
+                navigate('/login?from=onboarding', {
                   state: {
                     from: { pathname: '/dashboard' },
                     // Pass Context so it persists after login
@@ -277,7 +301,7 @@ const LandingPage = () => {
       case 1:
         return {
           title: "Which best describes your role?",
-          description: "This helps us tailor the right responses for your interview simulation."
+          description: "This helps us tailor the right responses for your interview."
         };
       case 2:
         return {
@@ -287,7 +311,7 @@ const LandingPage = () => {
       case 3:
         return {
           title: "Choose your target company",
-          description: "We'll simulate the specific culture and interview style of this company."
+          description: "We'll tailor the interview questions to match roles at this company."
         };
       case 4:
         return {
@@ -297,12 +321,17 @@ const LandingPage = () => {
       case 5:
         return {
           title: "Upload your resume",
-          description: "Our AI will analyze your experience to identify your kill zones."
+          description: "Gemini will analyze your experience to identify your weak points."
         };
       case 6:
         return {
           title: "Select your interviewer",
           description: "Choose the personality that best fits the challenge you need."
+        };
+      case 7:
+        return {
+          title: "Choose your language",
+          description: `${selectedPersona?.name || 'Your interviewer'} speaks these languages. Pick your preferred one.`
         };
       default:
         return { title: "", description: "" };
@@ -329,12 +358,13 @@ const LandingPage = () => {
     { name: "Netflix", icon: SiNetflix, color: "#E50914" }
   ];
 
-  // Persona Selection State (Step 6)
-  const [selectedPersona, setSelectedPersona] = useState(null);
+
 
   const handlePersonaSelect = (persona) => {
     setSelectedPersona(persona);
   };
+
+
 
   const isRoleValid = selectedRole || (isOtherSelected && customRole.trim());
   const isExperienceValid = selectedExperience || (isOtherExperienceSelected && customExperience.trim());
@@ -342,13 +372,15 @@ const LandingPage = () => {
   const isJobVariantValid = selectedJobVariant !== null;
   const isResumeValid = resumeFile && (uploadStage === 'uploaded' || analysisDone);
   const isPersonaValid = selectedPersona !== null;
+  const isLanguageValid = selectedLanguage !== null;
 
   const canProceed = step === 1 ? isRoleValid
     : (step === 2 ? isExperienceValid
       : (step === 3 ? isCompanyValid
         : (step === 4 ? isJobVariantValid
           : (step === 5 ? isResumeValid
-            : (step === 6 ? isPersonaValid : false)))));
+            : (step === 6 ? isPersonaValid
+              : (step === 7 ? isLanguageValid : false))))));
 
 
 
@@ -393,7 +425,7 @@ const LandingPage = () => {
             layout
             className="mb-8"
           >
-            <span className="text-blue-600 text-sm font-bold tracking-[0.3em] uppercase border border-blue-100 bg-blue-50 px-4 py-2 rounded-full">
+            <span className="text-gray-900 text-sm font-bold tracking-[0.3em] uppercase border border-gray-300 bg-gray-100 px-4 py-2 rounded-full">
               Sparr AI
             </span>
           </motion.div>
@@ -416,14 +448,13 @@ const LandingPage = () => {
                 className="flex flex-col items-center"
               >
                 <p className="text-gray-500 text-lg md:text-xl text-center max-w-2xl mb-12 leading-relaxed">
-                  Train with the only AI interviewer that interrupts you,
-                  doubts your skills, and prepares you for reality.
+                  Train with the only AI interviewer that challenges you, probes your weaknesses, and prepares you for reality.
                 </p>
 
                 {/* CTA Button */}
                 <div>
                   <button
-                    onClick={() => navigate('/wizard')}
+                    onClick={() => setIsScrolled(true)}
                     className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-gray-900 rounded-full hover:bg-gray-800 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
                   >
                     <span className="relative z-10">Start Sparring</span>
@@ -706,8 +737,14 @@ const LandingPage = () => {
             {step === 4 && (
               <div className="mb-6 min-h-[180px]">
                 {isLoadingJobs && (
-                  <div className="flex items-center justify-center h-48">
-                    <SparrLoader text="Generating Job Archetypes" />
+                  <div className="flex flex-col items-center justify-center h-48">
+                    <ShimmeringText
+                      text="Finding job archetypes..."
+                      className="text-lg font-medium text-gray-500"
+                      shimmerColor="#ffffff"
+                      spread={2}
+                      duration={2}
+                    />
                   </div>
                 )}
                 {jobError && (
@@ -875,11 +912,11 @@ const LandingPage = () => {
                         <div className="w-full max-w-md">
                           <div className="flex justify-between text-sm font-semibold mb-2">
                             <span className="text-gray-900">{resumeFile.name}</span>
-                            <span className="text-blue-600">{uploadProgress}%</span>
+                            <span className="text-gray-900">{uploadProgress}%</span>
                           </div>
                           <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden relative">
                             <motion.div
-                              className="h-full bg-blue-600 rounded-full relative overflow-hidden"
+                              className="h-full bg-gray-900 rounded-full relative overflow-hidden"
                               initial={{ width: 0 }}
                               animate={{ width: `${uploadProgress}%` }}
                             >
@@ -902,11 +939,15 @@ const LandingPage = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="absolute inset-0 z-20 bg-white"
+                      className="absolute inset-0 z-20 bg-white flex items-center justify-center"
                     >
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <SparrLoader text="Gemini is analysing your resume..." />
-                      </div>
+                      <ShimmeringText
+                        text="Gemini is analysing your resume..."
+                        className="text-lg font-medium text-gray-500"
+                        shimmerColor="#ffffff"
+                        spread={2}
+                        duration={2}
+                      />
                     </motion.div>
                   )}
 
@@ -922,10 +963,9 @@ const LandingPage = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">Resume Analyzed</h3>
-                      <p className="text-gray-500">We've identified your potential weak points.</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">Resume Analyzed</h3>
                       <button
-                        className="mt-4 text-sm text-gray-400 hover:text-red-500 underline"
+                        className="text-sm text-gray-400 hover:text-red-500 underline"
                         onClick={() => {
                           setResumeFile(null);
                           setUploadStage('idle');
@@ -967,7 +1007,7 @@ const LandingPage = () => {
                           }`} />
                       </div>
 
-                      {/* Card Content (Name & Role) */}
+                      {/* Content */}
                       <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
                         <h3 className="text-xl font-bold mb-1">{persona.name}</h3>
                         <p className="text-xs text-blue-200 font-semibold tracking-wide uppercase h-8 line-clamp-2">
@@ -1012,16 +1052,17 @@ const LandingPage = () => {
                             )}
                           </div>
 
-                          {/* Language Tooltip */}
-                          <div className="absolute bottom-full left-0 w-max mb-2 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl opacity-0 invisible group-hover/lang:opacity-100 group-hover/lang:visible transition-all duration-300 transform translate-y-2 group-hover/lang:translate-y-0 z-30 overflow-hidden">
-                            <div className="p-3">
-                              <div className="space-y-1">
-                                {persona.languages.map((lang) => (
-                                  <div key={lang} className="text-xs text-gray-400 hover:text-white transition-colors">
-                                    {LANGUAGE_NAMES[lang] || lang.toUpperCase()}
-                                  </div>
-                                ))}
-                              </div>
+                          {/* Tooltip - Shows on Hover */}
+                          <div className="absolute left-0 bottom-full -mb-3 hidden group-hover/lang:block z-50">
+                            <div className="bg-gray-800/95 backdrop-blur-sm rounded-md border border-gray-700/50 py-1">
+                              {persona.languages.map((lang) => (
+                                <div
+                                  key={lang}
+                                  className="px-2.5 py-1 text-[11px] text-gray-200"
+                                >
+                                  {LANGUAGE_NAMES[lang] || lang.toUpperCase()}
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
@@ -1032,7 +1073,42 @@ const LandingPage = () => {
               </div>
             )}
 
+            {step === 7 && (
+              <div className="mb-6">
+                <div className="grid grid-cols-2 gap-3 max-h-[320px] overflow-y-auto pr-2">
+                  {availableLanguages.map((lang, index) => (
+                    <motion.div
+                      key={lang}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 + (index * 0.05) }}
+                      onClick={() => setSelectedLanguage(lang)}
+                      className={`relative flex items-center p-3 rounded-xl border-2 transition-all duration-300 cursor-pointer group ${selectedLanguage === lang
+                        ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200'
+                        : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                        }`}
+                    >
+                      <img
+                        src={`https://flagcdn.com/w40/${lang}.png`}
+                        alt={lang}
+                        className={`w-8 h-8 rounded-full object-cover border-2 shadow-sm mr-3 ${selectedLanguage === lang ? 'border-blue-200' : 'border-gray-100'}`}
+                      />
+                      <h3 className={`font-bold ${selectedLanguage === lang ? 'text-blue-900' : 'text-gray-900'}`}>
+                        {LANGUAGE_NAMES[lang] || lang.toUpperCase()}
+                      </h3>
 
+                      {selectedLanguage === lang && (
+                        <div className="absolute top-3 right-3 bg-blue-500 text-white p-0.5 rounded-full shadow-lg">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Footer with Progress and Next */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -1045,12 +1121,16 @@ const LandingPage = () => {
                   className="h-full bg-blue-600 rounded-full"
                   initial={{ width: 0 }}
                   animate={{
-                    width: step === 1 ? (isRoleValid ? '16.6%' : '0%')
-                      : (step === 2 ? (isExperienceValid ? '33.3%' : '16.6%')
-                        : (step === 3 ? (isCompanyValid ? '50%' : '33.3%')
-                          : (step === 4 ? (isJobVariantValid ? '66.6%' : '50%')
-                            : (step === 5 ? (isResumeValid ? '83.3%' : '66.6%')
-                              : (step === 6 ? (isPersonaValid ? '100%' : '83.3%') : '0%')))))
+                    width: (() => {
+                      if (step === 1) return isRoleValid ? '14.2%' : '0%';
+                      if (step === 2) return isExperienceValid ? '28.5%' : '14.2%';
+                      if (step === 3) return isCompanyValid ? '42.8%' : '28.5%';
+                      if (step === 4) return isJobVariantValid ? '57.1%' : '42.8%';
+                      if (step === 5) return isResumeValid ? '71.4%' : '57.1%';
+                      if (step === 6) return isPersonaValid ? '85.7%' : '71.4%';
+                      if (step === 7) return isLanguageValid ? '100%' : '85.7%';
+                      return '0%';
+                    })()
                   }}
                   transition={{ duration: 0.5 }}
                 />
@@ -1068,23 +1148,33 @@ const LandingPage = () => {
                 ) : <div />}
 
                 {step === 6 ? (
+                  <button
+                    onClick={handleNext}
+                    disabled={!isPersonaValid}
+                    className={`px-8 py-3 rounded-lg font-bold text-white transition-all duration-300 ${isPersonaValid
+                      ? 'bg-blue-600 hover:bg-blue-500 shadow-lg'
+                      : 'bg-gray-300 cursor-not-allowed'
+                      }`}
+                  >
+                    Next Step
+                  </button>
+                ) : step === 7 ? (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleNext}
-                    disabled={!isPersonaValid || isCreatingSession}
-                    className={`px-8 py-3 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center ${isPersonaValid && !isCreatingSession
+                    disabled={!isLanguageValid || isCreatingSession}
+                    className={`px-8 py-3 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center ${isLanguageValid && !isCreatingSession
                       ? 'bg-blue-600 hover:bg-blue-500 shadow-lg'
                       : 'bg-gray-300 cursor-not-allowed'
                       }`}
                   >
                     {isCreatingSession ? (
-                      <>
-                        <SparrLoader text="" className="w-5 h-5 mr-2" />
-                        Connecting to Agent...
-                      </>
+                      <>Starting...</>
                     ) : (
-                      "Start Interview"
+                      <>
+                        Start Session <span className="ml-2">→</span>
+                      </>
                     )}
                   </motion.button>
                 ) : (
@@ -1092,19 +1182,19 @@ const LandingPage = () => {
                     onClick={handleNext}
                     disabled={!canProceed}
                     className={`px-8 py-3 rounded-lg font-bold text-white transition-all duration-300 ${canProceed
-                      ? 'bg-blue-600 hover:bg-blue-500 transform hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.5)]'
+                      ? 'bg-gray-900 hover:bg-gray-800 shadow-lg'
                       : 'bg-gray-300 cursor-not-allowed'
                       }`}
                   >
-                    Next Step
+                    Next
                   </button>
                 )}
               </div>
             </motion.div>
           </motion.div>
         </div>
-      </motion.div >
-    </div >
+      </motion.div>
+    </div>
   );
 };
 

@@ -1,11 +1,8 @@
-import { generateMockReport } from './reportSimulator';
-
 /**
  * buildHistoryChain
  * 
  * Traverses the real interview list using parentId/childId pointers to build the full chain.
- * If a real interview lacks a 'report' (stats), it augments it with a deterministic mock report
- * so the visualization/analytics still work.
+ * Transforms real Gemini report data into UI-expected format.
  * 
  * @param {string} currentId - The ID of the session we are currently viewing/starting from.
  * @param {Array} allInterviews - The master list of all real interviews fetched from backend.
@@ -49,20 +46,49 @@ export const buildHistoryChain = (currentId, allInterviews = []) => {
             visitedIds.add(child.id);
             cursor = child;
         } else {
-            // console.warn(`Broken child link: ${cursor.childId} not found.`);
             break;
         }
     }
 
-    // 4. Augment with Reports (Standardization Layer)
-    // The UI expects 'report.stats' with specific keys. Real data excludes this until graded.
-    return chain.map((session, index) => {
+    // 4. Transform Reports to UI-expected format
+    return chain.map((session) => {
         // Clone to avoid mutating original state in cache
         const augmented = { ...session };
-        // FIX: Ensure 'date' property exists for UI compatibility if 'createdAt' is used
+
+        // Ensure 'date' property exists for UI compatibility
         if (!augmented.date && augmented.createdAt) {
             augmented.date = augmented.createdAt;
         }
+
+        // Transform real report to UI-expected format
+        if (augmented.report && augmented.report.stats) {
+            const report = augmented.report;
+
+            // Map report.stats to skills for UI components
+            augmented.skills = report.stats || {};
+            augmented.overallScore = report.overallScore || 0;
+            augmented.highlights = report.highlights || [];
+            augmented.feedback = report.feedback || {};
+            augmented.recommendations = report.recommendations || [];
+            augmented.skillsFeedback = report.skillsFeedback || {};
+            augmented.audioAnalysis = report.audioAnalysis || {};
+            augmented.interviewerMessage = report.interviewerMessage || {};
+
+            // Map recording duration for waveform pin positioning
+            if (!augmented.recording) {
+                augmented.recording = {};
+            }
+            augmented.recording.duration = report.totalDuration || augmented.recording?.duration || "15:00";
+
+            // Ensure basic fields exist
+            augmented.role = augmented.jobContext?.role || 'Interview';
+            augmented.company = augmented.jobContext?.company || 'Company';
+            augmented.companyColor = "#111827";
+        }
+
+        // Ensure audioUrl is preserved for audio playback
+        // (audioUrl is stored at top level of interview document, not in report)
+        augmented.audioUrl = augmented.audioUrl || null;
 
         // Ensure Agent Object exists (UI fallback)
         if (!augmented.agent) {
@@ -70,48 +96,6 @@ export const buildHistoryChain = (currentId, allInterviews = []) => {
                 name: (typeof augmented.persona === 'string' ? augmented.persona : augmented.persona?.name) || 'Interviewer',
                 avatar: augmented.persona?.avatar || `https://i.pravatar.cc/150?u=${augmented.id}`
             };
-        }
-
-        // Ensure Report exists
-        if (!augmented.report || !augmented.report.stats) {
-            const role = augmented.jobContext?.role || 'Engineer';
-            // Generate deterministic stats based on ID
-            const mockReport = generateMockReport(augmented.id, role);
-
-            // If it's an older session, simulate "weaker" stats for the growth graph effect
-            // (Only do this if we are augmenting - i.e. it's ungraded)
-            const isLatest = index === chain.length - 1;
-            if (!isLatest) {
-                Object.keys(mockReport.stats).forEach(key => {
-                    mockReport.stats[key] = Math.max(40, mockReport.stats[key] - 10);
-                });
-                mockReport.overallScore = Math.max(50, mockReport.overallScore - 10);
-            }
-
-            augmented.report = mockReport;
-        } else if (!augmented.report.highlights) {
-            // If real report exists but lacks highlights, inject mock ones for UI demo
-            augmented.report.highlights = [
-                { type: 'success', timestamp: '05:20', text: 'Excellent explanation of the algorithm complexity.', audioUrl: null },
-                { type: 'warning', timestamp: '12:45', text: 'Struggled slightly with the edge case handling.', audioUrl: null }
-            ];
-        }
-
-        // Ensure Skills Aggregation exists (for Dashboard Charts)
-        if (!augmented.skills && augmented.report?.stats) {
-            augmented.skills = {
-                technical: augmented.report.stats.technical,
-                communication: augmented.report.stats.communication,
-                confidence: augmented.report.stats.confidence,
-                pacing: augmented.report.stats.pacing,
-                empathy: augmented.report.stats.empathy,
-                problemSolving: augmented.report.stats.problemSolving
-            };
-        }
-
-        // Ensure Overall Score
-        if (!augmented.overallScore && augmented.report) {
-            augmented.overallScore = augmented.report.overallScore;
         }
 
         return augmented;

@@ -73,14 +73,41 @@ export const AuthProvider = ({ children }) => {
         return result;
     };
 
-    const logout = (isExpiry = false) => {
-        localStorage.removeItem('loginTime');
-        localStorage.removeItem('firebaseToken');
+    const logout = async (isExpiry = false) => {
+        // Preserve lastKnownUser so returning users go to login, not landing
+        const lastKnownUser = localStorage.getItem('lastKnownUser');
 
-        // Only clear known user if explicit logout
-        if (!isExpiry) {
-            localStorage.removeItem('lastKnownUser');
+        // Clear all localStorage
+        localStorage.clear();
+
+        // Restore lastKnownUser for returning user detection
+        if (lastKnownUser) {
+            localStorage.setItem('lastKnownUser', lastKnownUser);
         }
+
+        // Clear all IndexedDB databases
+        try {
+            const databases = await indexedDB.databases();
+            for (const db of databases) {
+                if (db.name) {
+                    indexedDB.deleteDatabase(db.name);
+                }
+            }
+        } catch (error) {
+            console.log('IndexedDB clear not fully supported, clearing known databases');
+            // Fallback: try to delete known database names
+            const knownDatabases = ['firebaseLocalStorageDb', 'firebase-messaging-database'];
+            knownDatabases.forEach(dbName => {
+                try {
+                    indexedDB.deleteDatabase(dbName);
+                } catch (e) {
+                    // Ignore errors
+                }
+            });
+        }
+
+        // Clear sessionStorage too
+        sessionStorage.clear();
 
         return signOut(auth);
     };

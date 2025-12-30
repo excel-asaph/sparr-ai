@@ -4,7 +4,7 @@ import { ChevronRight, ChevronLeft, Upload, Check, AlertCircle, Briefcase, Build
 import { SiGoogle, SiAmazon, SiMeta, SiNetflix } from 'react-icons/si';
 import { FaMicrosoft } from 'react-icons/fa';
 import SparrLoader from '../SparrLoader';
-import { PERSONAS } from '../../data/personas';
+import { PERSONAS, LANGUAGE_NAMES } from '../../data/personas';
 
 const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
     const [step, setStep] = useState(1);
@@ -36,6 +36,9 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
 
     // Persona
     const [selectedPersona, setSelectedPersona] = useState(null);
+
+    // Language
+    const [selectedLanguage, setSelectedLanguage] = useState('us');
 
     // Final Creation
     const [isCreatingSession, setIsCreatingSession] = useState(false);
@@ -141,7 +144,8 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
             weaknesses: resumeAnalysisResult?.weaknesses || [],
             persona: selectedPersona.name,
             personaDescription: selectedPersona.description,
-            personaStyle: selectedPersona.role
+            personaStyle: selectedPersona.role,
+            language: selectedLanguage
         };
 
         try {
@@ -159,7 +163,8 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
                 resumeContext: { storageUrl: resumeAnalysisResult?.storageUrl, weaknesses: resumeAnalysisResult?.weaknesses },
                 persona: selectedPersona,
                 resumeFile: resumeFile,
-                systemPrompt: promptData.system_prompt
+                systemPrompt: promptData.system_prompt,
+                language: selectedLanguage
             });
 
         } catch (err) {
@@ -174,9 +179,9 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
         if (step === 1) {
             setStep(s => s + 1);
             fetchJobs(); // Fetch jobs when moving from step 1 to step 2
-        } else if (step < 4) {
+        } else if (step < 5) {
             setStep(s => s + 1);
-        } else if (step === 4) {
+        } else if (step === 5) {
             handleFinish();
         }
     };
@@ -196,10 +201,12 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
                 return uploadStage === 'uploaded' && !isAnalyzing;
             case 4:
                 return !!selectedPersona;
+            case 5:
+                return !!selectedLanguage;
             default:
                 return false;
         }
-    }, [step, selectedRole, isOtherRole, customRole, selectedLevel, selectedCompany, isOtherCompany, customCompany, selectedJobVariant, uploadStage, isAnalyzing, selectedPersona]);
+    }, [step, selectedRole, isOtherRole, customRole, selectedLevel, selectedCompany, isOtherCompany, customCompany, selectedJobVariant, uploadStage, isAnalyzing, selectedPersona, selectedLanguage]);
 
 
     // --- Main Render ---
@@ -213,16 +220,11 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
             <div className="flex items-center justify-between p-8 border-b border-gray-100 bg-white z-10">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900">New Session</h2>
-                    <p className="text-gray-500 text-sm mt-1">Step {step} of 4</p>
+                    <p className="text-gray-500 text-sm mt-1">Step {step} of 5</p>
                 </div>
-                {step === 1 && (
-                    <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-gray-500" />
-                    </button>
-                )}
-                {step > 1 && (
-                    <Check className="w-6 h-6 text-gray-300" />
-                )}
+                <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <X className="w-5 h-5 text-gray-500" />
+                </button>
             </div>
 
             {/* Scrollable Content Area */}
@@ -563,6 +565,47 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
                             </div>
                         )}
 
+                        {/* Step 5: Language Selection */}
+                        {step === 5 && selectedPersona && (
+                            <div className="space-y-4">
+                                <p className="text-sm text-gray-500 mb-4">
+                                    {selectedPersona.name} can conduct interviews in the following languages. Select your preferred language:
+                                </p>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {(selectedPersona.languages || ['us']).map((lang, index) => (
+                                        <motion.div
+                                            key={lang}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.05 * index }}
+                                            onClick={() => setSelectedLanguage(lang)}
+                                            className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer border-2 transition-all duration-200 ${selectedLanguage === lang
+                                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                                                }`}
+                                        >
+                                            <img
+                                                src={`https://flagcdn.com/w80/${lang}.png`}
+                                                alt={lang}
+                                                className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm"
+                                            />
+                                            <div>
+                                                <span className={`text-sm font-bold ${selectedLanguage === lang ? 'text-blue-700' : 'text-gray-700'
+                                                    }`}>
+                                                    {LANGUAGE_NAMES[lang] || lang.toUpperCase()}
+                                                </span>
+                                            </div>
+                                            {selectedLanguage === lang && (
+                                                <div className="ml-auto">
+                                                    <Check className="w-5 h-5 text-blue-500" />
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                     </motion.div>
                 </AnimatePresence>
             </div>
@@ -591,7 +634,7 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
                             <SparrLoader size="sm" color="white" />
                             <span>Creating...</span>
                         </>
-                    ) : step === 4 ? (
+                    ) : step === 5 ? (
                         <>Start Session <ArrowRight className="w-4 h-4" /></>
                     ) : (
                         <>Next <ChevronRight className="w-4 h-4" /></>

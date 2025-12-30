@@ -5,7 +5,9 @@ import { buildHistoryChain } from '../../utils/historyUtils';
 import ReportDetail from './ReportDetail';
 import ProgressDashboard from './ProgressDashboard';
 
-const HistoryExplorer = ({ currentSessionId, onClose, allInterviews }) => {
+const HistoryExplorer = ({ currentSessionId, onClose, allInterviews, onNavigateToResumes }) => {
+    // ...
+
     const [history, setHistory] = useState([]);
     const [selectedSession, setSelectedSession] = useState(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -23,11 +25,29 @@ const HistoryExplorer = ({ currentSessionId, onClose, allInterviews }) => {
         }
     }, [currentSessionId, allInterviews]);
 
+    // Updated selection logic to handle View Mode manually instead of useEffect
     const handleSelect = (index) => {
         if (index >= 0 && index < history.length) {
             setSelectedIndex(index);
             setSelectedSession(history[index]);
-            setJumpValue(String(index + 1)); // Sync input
+            setJumpValue(String(index + 1));
+
+            // Default behavior for Sidebar/Nav: Current -> Progress, Past -> Report
+            if (index === history.length - 1) {
+                setViewMode('progress');
+            } else {
+                setViewMode('report');
+            }
+        }
+    };
+
+    // Special handler for Chart Clicks (Always go to Report)
+    const handleChartSelect = (index) => {
+        if (index >= 0 && index < history.length) {
+            setSelectedIndex(index);
+            setSelectedSession(history[index]);
+            setJumpValue(String(index + 1));
+            setViewMode('report'); // Force report view
         }
     };
 
@@ -64,12 +84,6 @@ const HistoryExplorer = ({ currentSessionId, onClose, allInterviews }) => {
     const isCurrent = selectedIndex === history.length - 1;
     const [viewMode, setViewMode] = useState('progress'); // 'progress' or 'report'
 
-    // Reset view mode when selection changes
-    useEffect(() => {
-        if (isCurrent) setViewMode('progress');
-        else setViewMode('report');
-    }, [selectedIndex, isCurrent]);
-
     if (!selectedSession) return null;
 
     return (
@@ -84,7 +98,7 @@ const HistoryExplorer = ({ currentSessionId, onClose, allInterviews }) => {
                 <div className="p-6 border-b border-gray-200">
                     <div className="flex items-center justify-between mb-1">
                         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <GitCommit className="text-blue-600 w-5 h-5" />
+                            <GitCommit className="text-gray-900 w-5 h-5" />
                             History
                         </h2>
                         <input
@@ -125,9 +139,9 @@ const HistoryExplorer = ({ currentSessionId, onClose, allInterviews }) => {
                                     <div className={`
                                         w-6 h-6 rounded-full flex items-center justify-center border-2 flex-shrink-0 mt-0.5
                                         ${isHead
-                                            ? 'bg-blue-600 border-blue-600 text-white'
+                                            ? 'bg-gray-900 border-gray-900 text-white'
                                             : isSelected
-                                                ? 'bg-blue-50 border-blue-500 text-blue-600'
+                                                ? 'bg-gray-100 border-gray-900 text-gray-900'
                                                 : 'bg-white border-gray-300 text-gray-400'
                                         }
                                     `}>
@@ -141,7 +155,7 @@ const HistoryExplorer = ({ currentSessionId, onClose, allInterviews }) => {
                                                 {session.role}
                                             </span>
                                             {isHead && (
-                                                <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded">
+                                                <span className="text-[10px] bg-gray-100 text-gray-900 border border-gray-200 font-bold px-1.5 py-0.5 rounded">
                                                     CURRENT
                                                 </span>
                                             )}
@@ -210,13 +224,13 @@ const HistoryExplorer = ({ currentSessionId, onClose, allInterviews }) => {
                             <div className="flex bg-gray-100 p-1 rounded-lg">
                                 <button
                                     onClick={() => setViewMode('progress')}
-                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'progress' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'progress' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
                                     Progress
                                 </button>
                                 <button
                                     onClick={() => setViewMode('report')}
-                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'report' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'report' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
                                     Report
                                 </button>
@@ -240,13 +254,19 @@ const HistoryExplorer = ({ currentSessionId, onClose, allInterviews }) => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute inset-0"
+                            className="h-full w-full"
                         >
                             {isCurrent && viewMode === 'progress' ? (
-                                <ProgressDashboard history={history} />
+                                <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
+                                    <ProgressDashboard
+                                        history={history}
+                                        onNavigateToResumes={onNavigateToResumes}
+                                        onPointClick={handleChartSelect}
+                                    />
+                                </div>
                             ) : (
-                                <div className="h-full overflow-y-auto p-8 scrollbar-thin scrollbar-thumb-gray-200">
-                                    <ReportDetail session={selectedSession} />
+                                <div className="h-full">
+                                    <ReportDetail session={selectedSession} onViewResume={onNavigateToResumes} />
                                 </div>
                             )}
                         </motion.div>

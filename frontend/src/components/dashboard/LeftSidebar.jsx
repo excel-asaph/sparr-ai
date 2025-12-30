@@ -1,8 +1,16 @@
 import React from 'react';
-import { Home, Mic, FileText, Grid, Settings, PanelLeft, CassetteTape, LayoutDashboard } from 'lucide-react';
+import { Home, Mic, FileText, Grid, PanelLeft, CassetteTape, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LeftSidebar = ({ isCollapsed, setIsCollapsed, activeTab, setActiveTab }) => {
+    const { currentUser } = useAuth();
+
+    // Get user info for avatar
+    const displayName = currentUser?.displayName || 'User';
+    const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const photoURL = currentUser?.photoURL;
+
     const navItems = [
         { id: 'home', icon: Home, label: 'Home' },
         { id: 'reports', icon: CassetteTape, label: 'Reports' },
@@ -19,7 +27,6 @@ const LeftSidebar = ({ isCollapsed, setIsCollapsed, activeTab, setActiveTab }) =
             {/* Header: Brand & Toggle */}
             <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
 
-                {/* Brand Text (Only visible when expanded) */}
                 {/* Brand Text (Only visible when expanded) */}
                 {!isCollapsed && (
                     <span className="text-2xl font-black tracking-tighter text-gray-900">
@@ -63,27 +70,46 @@ const LeftSidebar = ({ isCollapsed, setIsCollapsed, activeTab, setActiveTab }) =
                 ))}
             </nav>
 
-            {/* Bottom Actions */}
-            <div className="p-4 border-t border-gray-100 space-y-2">
-                <button className={`w-full flex items-center p-3 rounded-xl text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-all ${isCollapsed ? 'justify-center' : ''}`}>
-                    <Settings className="w-5 h-5" />
-                    {!isCollapsed && <span className="ml-3 font-medium text-sm">Settings</span>}
-                </button>
+            {/* Bottom: Profile Button Only */}
+            <div className="p-4 border-t border-gray-100">
+                <button
+                    onClick={() => setActiveTab('profile')}
+                    className={`w-full flex items-center p-3 rounded-xl transition-all duration-200 group relative ${activeTab === 'profile'
+                        ? 'bg-blue-50'
+                        : 'hover:bg-gray-50'
+                        } ${isCollapsed ? 'justify-center' : ''}`}
+                >
+                    {/* Avatar */}
+                    {photoURL ? (
+                        <img
+                            src={photoURL}
+                            alt={displayName}
+                            className={`w-8 h-8 min-w-[32px] min-h-[32px] aspect-square shrink-0 rounded-full border-2 object-cover ${activeTab === 'profile' ? 'border-blue-300' : 'border-gray-200'}`}
+                        />
+                    ) : (
+                        <div className={`w-8 h-8 min-w-[32px] min-h-[32px] aspect-square shrink-0 rounded-full bg-gradient-to-tr from-orange-500 to-orange-400 flex items-center justify-center text-xs font-bold text-white shadow-sm ${activeTab === 'profile' ? 'ring-2 ring-blue-300' : ''
+                            }`}>
+                            {initials}
+                        </div>
+                    )}
 
-                <button className={`w-full flex items-center p-3 rounded-xl text-gray-400 hover:bg-gray-50 hover:text-gray-900 transition-all ${isCollapsed ? 'justify-center' : ''}`}>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-sm">
-                        JD
-                    </div>
                     {!isCollapsed && (
                         <div className="ml-3 text-left overflow-hidden">
-                            <p className="text-sm font-bold text-gray-700 truncate">Jane Doe</p>
-                            <p className="text-xs text-gray-400 truncate">Pro Plan</p>
+                            <p className={`text-sm font-bold truncate ${activeTab === 'profile' ? 'text-blue-600' : 'text-gray-700'}`}>
+                                {displayName}
+                            </p>
+                            <p className="text-xs text-gray-400 truncate">View Profile</p>
+                        </div>
+                    )}
+
+                    {/* Tooltip for collapsed state */}
+                    {isCollapsed && (
+                        <div className="absolute left-full ml-4 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                            Profile
                         </div>
                     )}
                 </button>
             </div>
-
-
         </motion.div>
     );
 };

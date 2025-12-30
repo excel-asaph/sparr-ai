@@ -7,10 +7,11 @@ import RightPanel from '../components/dashboard/RightPanel';
 import ReportsTab from '../components/dashboard/ReportsTab';
 import ShimmeringText from '../components/ui/ShimmeringText';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PERSONAS } from '../data/personas';
+import { PERSONAS, FLAG_TO_ELEVENLABS_LANG } from '../data/personas';
 import HomeTab from '../components/dashboard/HomeTab';
 import SpacesTab from '../components/dashboard/SpacesTab';
 import ResumesView from '../components/dashboard/ResumesView';
+import ProfileTab from '../components/dashboard/ProfileTab';
 
 // ... (inside DashboardPage)
 
@@ -18,7 +19,7 @@ import ResumesView from '../components/dashboard/ResumesView';
 const DashboardPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { currentUser } = useAuth(); // Access User
+    const { currentUser, logout } = useAuth(); // Access User and logout
 
     // --- State: Active Session Data ---
     // We initialize state from location.state (if coming from Landing Page)
@@ -31,7 +32,8 @@ const DashboardPage = () => {
             persona: state.persona,
             resumeFile: state.resumeFile,
             systemPrompt: state.systemPrompt,
-            interviewId: state.interviewId
+            interviewId: state.interviewId,
+            language: state.language
         };
     });
 
@@ -64,6 +66,25 @@ const DashboardPage = () => {
         return () => clearInterval(interval);
     }, [isLoading]);
     const [activeTab, setActiveTab] = useState(isFreshSession ? 'mock-interview' : 'home');
+    const [targetResumeUrl, setTargetResumeUrl] = useState(null);
+
+    // Session duration timer for Interview Coach tips
+    const [sessionDuration, setSessionDuration] = useState(0);
+
+    useEffect(() => {
+        let interval;
+        if (activeTab === 'mock-interview') {
+            // Auto-collapse sidebar for immersive experience
+            setIsSidebarCollapsed(true);
+
+            interval = setInterval(() => {
+                setSessionDuration(prev => prev + 1);
+            }, 1000);
+        } else {
+            setSessionDuration(0); // Reset when leaving interview
+        }
+        return () => clearInterval(interval);
+    }, [activeTab]);
 
     // Durable Sidebar State
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -120,8 +141,8 @@ const DashboardPage = () => {
             console.log("Saving Initial Interview (Landing Page Flow)...");
             hasInitiatedSave.current = true;
 
-            // Don't block UI for this background save
-            setIsLoading(false);
+            // IMPORTANT: Keep loading state until interview is created
+            // This ensures VoiceOrb doesn't start before we have an interviewId
 
             const saveSession = async () => {
                 try {
@@ -164,10 +185,17 @@ const DashboardPage = () => {
                                 interviewId: data.interviewId
                             }
                         });
+
+                        // NOW it's safe to show the VoiceOrb
+                        setIsLoading(false);
+                    } else {
+                        console.error("No interviewId returned from API");
+                        setIsLoading(false);
                     }
                 } catch (err) {
                     console.error("Background Save Failed:", err);
                     alert("Failed to initialize session. Please check if 'Anonymous Authentication' is enabled in your Firebase Console.");
+                    setIsLoading(false);  // Stop loading even on error
                 }
             };
             saveSession();
@@ -188,9 +216,36 @@ const DashboardPage = () => {
 
 
     // --- Handlers ---
-    const handleEndCall = () => {
+    const handleEndCall = async () => {
         console.log("Call Ended. Generating Report...");
+
+        // Switch to reports tab immediately
         setActiveTab('reports');
+
+        // Refetch function for polling
+        const refetchInterviews = async () => {
+            try {
+                const token = await currentUser?.getIdToken();
+                const res = await fetch('/api/interviews', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.interviews) {
+                    setAllInterviews(data.interviews);
+
+                    // If any interview is still generating, poll again in 3 seconds
+                    const stillGenerating = data.interviews.some(i => i.reportStatus === 'generating');
+                    if (stillGenerating) {
+                        setTimeout(refetchInterviews, 3000);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to refetch interviews:", error);
+            }
+        };
+
+        // Start polling after initial delay
+        setTimeout(refetchInterviews, 500);
     };
 
     const handleStartNewSession = async (sessionData) => {
@@ -442,19 +497,78 @@ const DashboardPage = () => {
                         <VoiceOrb
                             isActive={true}
                             onEndCall={handleEndCall}
+                            onLeaveSession={() => {
+                                const interviewIdToRemove = activeSession.interviewId;
+                                const parentIdToUpdate = activeSession.parentId;
+
+                                setAllInterviews(prev => {
+                                    // First, remove the abandoned interview
+                                    let updated = prev.filter(i => i.id !== interviewIdToRemove);
+
+                                    // If this was a followup, update parent's childId to null
+                                    if (parentIdToUpdate) {
+                                        updated = updated.map(i =>
+                                            i.id === parentIdToUpdate
+                                                ? { ...i, childId: null }
+                                                : i
+                                        );
+                                    }
+
+                                    return updated;
+                                });
+
+                                setActiveTab('home');
+                            }}
                             systemPrompt={activeSession.systemPrompt}
+                            voiceId={persona?.voiceId}
+                            language={FLAG_TO_ELEVENLABS_LANG[activeSession.language] || 'en'}
+                            interviewId={activeSession.interviewId}
+                            parentId={activeSession.parentId}
+                            previousInterview={activeSession.parentId ? allInterviews.find(i => i.id === activeSession.parentId) : null}
+                            jobContext={activeSession.jobContext}
+                            persona={persona}
+                            currentUser={currentUser}
                         />
+
+
                     ) : activeTab === 'reports' ? (
-                        <ReportsTab onNavigateToResumes={() => setActiveTab('resumes')} />
+                        <ReportsTab
+                            interviews={allInterviews}
+                            onNavigateToResumes={(context) => {
+                                if (context?.storageUrl) setTargetResumeUrl(context.storageUrl);
+                                setActiveTab('resumes');
+                            }}
+                        />
                     ) : activeTab === 'spaces' ? (
                         <SpacesTab
                             allInterviews={allInterviews}
                             onStartSession={handleStartFollowupSession}
                             onOpenWorkflow={() => setIsSidebarCollapsed(true)}
                             onDeleteInterview={handleDeleteInterview}
+                            onNavigateToResumes={(context) => {
+                                if (context?.storageUrl) setTargetResumeUrl(context.storageUrl);
+                                setActiveTab('resumes');
+                            }}
                         />
                     ) : activeTab === 'resumes' ? (
-                        <ResumesView interviews={allInterviews} />
+                        <ResumesView
+                            interviews={allInterviews}
+                            initialSelectedUrl={targetResumeUrl}
+                        />
+                    ) : activeTab === 'profile' ? (
+                        <ProfileTab
+                            interviews={allInterviews}
+                            onSignOut={async () => {
+                                try {
+                                    await logout();
+                                    navigate('/login');
+                                } catch (error) {
+                                    console.error('Error signing out:', error);
+                                    // Still navigate even if there's an error
+                                    navigate('/login');
+                                }
+                            }}
+                        />
                     ) : (
                         <div className="text-center text-gray-400">
                             <h2 className="text-xl font-semibold">Section Under Construction</h2>
@@ -477,7 +591,8 @@ const DashboardPage = () => {
                             persona={persona}
                             company={company}
                             jobVariant={activeSession.jobContext?.variant}
-                            languages={['us', 'es', 'de']}
+                            selectedLanguage={activeSession.language}
+                            sessionDuration={sessionDuration}
                         />
                     </motion.div>
                 )}

@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, PhoneOff, Settings2, Maximize2, Minimize2, Wifi, Clock, Battery, Notebook, X } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Settings2, Maximize2, Minimize2, Wifi, Clock, Battery, Notebook, X, LogOut } from 'lucide-react';
 import { useConversation } from '@elevenlabs/react';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '../../firebase';
 import Workbook from './Workbook';
 import { Orb } from '../ui/Orb';
 
-const VoiceOrb = ({ isActive, onEndCall, systemPrompt }) => {
+const VoiceOrb = ({ isActive, onEndCall, onLeaveSession, systemPrompt, voiceId, language, interviewId, parentId, previousInterview, jobContext, persona, currentUser }) => {
     // Local UI State
     const [isMuted, setIsMuted] = useState(false);
     const [isImmersive, setIsImmersive] = useState(false);
@@ -16,7 +18,7 @@ const VoiceOrb = ({ isActive, onEndCall, systemPrompt }) => {
 
     // Session Timer State (HUD)
     const [durationSeconds, setDurationSeconds] = useState(0);
-    const MAX_DURATION = 30 * 60; // 30 Minutes default limit
+    const MAX_DURATION = 5 * 60; // 5 Minutes session limit
 
     useEffect(() => {
         let interval;
@@ -39,13 +41,143 @@ const VoiceOrb = ({ isActive, onEndCall, systemPrompt }) => {
         return formatTime(remaining);
     };
 
+    // Get remaining time styling based on urgency
+    const getRemainingTimeStyle = (elapsed) => {
+        const remaining = MAX_DURATION - elapsed;
+        if (remaining <= 60) {
+            // Under 1 minute: Red with pulse
+            return { color: 'text-red-600', iconColor: 'text-red-500', pulse: true };
+        } else if (remaining <= 120) {
+            // Under 2 minutes: Amber warning
+            return { color: 'text-amber-600', iconColor: 'text-amber-500', pulse: false };
+        }
+        // Healthy: Green/Blue
+        return { color: 'text-blue-600', iconColor: 'text-blue-500', pulse: false };
+    };
+
+    const remainingStyle = getRemainingTimeStyle(durationSeconds);
+
     // Mute Logic: Ref to hold the active media stream
     const streamRef = useRef(null);
+
+    // Conversation ID ref for report generation
+    const conversationIdRef = useRef(null);
+    const interviewIdRef = useRef(interviewId);
+    const isLeavingRef = useRef(false); // Flag to skip report generation on leave
+
+    // Keep interviewIdRef updated
+    useEffect(() => {
+        interviewIdRef.current = interviewId;
+        console.log("VoiceOrb: interviewId updated to:", interviewId);
+    }, [interviewId]);
+
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+    // Report generation function
+    const generateReport = async (convId) => {
+        const activeInterviewId = interviewIdRef.current || interviewId;
+        console.log("generateReport called with:", { convId, interviewId: activeInterviewId });
+
+        if (!convId || !activeInterviewId) {
+            console.error("generateReport aborted - missing:", { convId, interviewId: activeInterviewId });
+            return;
+        }
+
+        setIsGeneratingReport(true);
+        console.log("Starting report generation...");
+
+        try {
+            // Note: reportStatus is already set to 'generating' in stopConversation
+            let token = null;
+            if (currentUser) {
+                token = await currentUser.getIdToken();
+                console.log("Got Firebase token for API call");
+            } else {
+                console.warn("No currentUser - making request without auth token");
+            }
+
+            console.log("Making API call to /api/generate-report with:", {
+                conversationId: convId,
+                interviewId: activeInterviewId,
+                jobContext,
+                persona: persona?.name
+            });
+
+            const response = await fetch('/api/generate-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    conversationId: convId,
+                    interviewId: activeInterviewId,
+                    jobContext,
+                    persona
+                })
+            });
+
+            console.log("API response status:", response.status);
+            const data = await response.json();
+            console.log("API response data:", data);
+
+            if (!data.success) {
+                console.error('Report generation failed:', data.error);
+            } else {
+                console.log("Report generation successful!");
+            }
+        } catch (error) {
+            console.error('Report generation error:', error);
+        } finally {
+            setIsGeneratingReport(false);
+        }
+    };
 
     // 1. ElevenLabs Hook
     const conversation = useConversation({
         onConnect: () => console.log("Connected to ElevenLabs"),
-        onDisconnect: () => console.log("Disconnected from ElevenLabs"),
+        onDisconnect: async () => {
+            console.log("Disconnected from ElevenLabs");
+
+            // If user is leaving (emergency exit), skip all report logic
+            if (isLeavingRef.current) {
+                console.log("Leave mode detected - skipping report generation");
+                isLeavingRef.current = false; // Reset flag
+                return; // Don't do anything - leaveSession handles cleanup
+            }
+
+            console.log("Agent-initiated disconnect - proceeding with report generation");
+            console.log("ConversationIdRef at disconnect:", conversationIdRef.current);
+
+            // Set reportStatus to 'generating' so UI shows loader
+            const currentInterviewId = interviewIdRef.current;
+            if (currentInterviewId) {
+                try {
+                    const interviewRef = doc(db, 'interviews', currentInterviewId);
+                    await updateDoc(interviewRef, { reportStatus: 'generating' });
+                    console.log("ReportStatus set to 'generating' via onDisconnect");
+                } catch (err) {
+                    console.error("Failed to set reportStatus in onDisconnect:", err);
+                }
+            }
+
+            // Trigger report generation
+            if (conversationIdRef.current) {
+                console.log("Triggering report generation with conversationId:", conversationIdRef.current);
+                generateReport(conversationIdRef.current);
+            } else {
+                console.error("No conversationId available at disconnect - report generation skipped");
+            }
+
+            // Clean up stream
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
+            }
+
+            // Trigger UI transition to reports
+            if (onEndCall) onEndCall();
+        },
         onMessage: (message) => console.log("Agent Message:", message),
         onError: (error) => console.error("ElevenLabs Error:", error),
     });
@@ -65,17 +197,55 @@ const VoiceOrb = ({ isActive, onEndCall, systemPrompt }) => {
         }
     }, [isMuted]);
 
+    // Generate personalized first message based on context
+    const generateFirstMessage = () => {
+        const userName = currentUser?.displayName?.split(' ')[0] || 'there';
+        const personaName = persona?.name || 'your interviewer';
+        const companyName = jobContext?.company || 'the company';
+        const roleName = jobContext?.role || 'the position';
+
+        // Followup interview (has previousInterview data)
+        if (previousInterview && parentId) {
+            const prevPersonaName = typeof previousInterview.persona === 'string'
+                ? previousInterview.persona
+                : previousInterview.persona?.name || 'your previous interviewer';
+            const isSamePersona = prevPersonaName === personaName;
+
+            if (isSamePersona) {
+                // Same persona - continuing relationship
+                return `Welcome back, ${userName}! It's ${personaName} again. I reviewed our last session and I'm curious to see how you've progressed. Ready to pick up where we left off?`;
+            } else {
+                // Different persona - handoff context
+                return `Hello ${userName}, I'm ${personaName}. I see ${prevPersonaName} conducted your previous interview for ${roleName} at ${companyName}. I've reviewed the notes and recommendations. Let's see how you've improved!`;
+            }
+        }
+
+        // New interview (no previous context)
+        return `Hello ${userName}! I'm ${personaName}, and I'll be conducting your ${roleName} interview today for ${companyName}. I've reviewed your resume and I'm ready to get started. Tell me, what excites you most about this opportunity?`;
+    };
+
     // 3. Start Logic with Interception
     const startConversation = async () => {
         try {
-            // A. Standard permission request
-            await navigator.mediaDevices.getUserMedia({ audio: true });
+            // A. Request permission first (stop stream immediately to avoid conflicts)
+            const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            testStream.getTracks().forEach(track => track.stop()); // Release immediately
 
-            // B. Intercept getUserMedia to capture the stream
+            // B. Intercept getUserMedia to capture the stream with quality constraints
             const originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
 
             navigator.mediaDevices.getUserMedia = async (constraints) => {
-                const stream = await originalGetUserMedia(constraints);
+                // Enhance audio constraints for better quality
+                const enhancedConstraints = {
+                    ...constraints,
+                    audio: constraints.audio === true ? {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } : constraints.audio
+                };
+
+                const stream = await originalGetUserMedia(enhancedConstraints);
                 // Capture the stream used by the SDK
                 streamRef.current = stream;
 
@@ -84,46 +254,126 @@ const VoiceOrb = ({ isActive, onEndCall, systemPrompt }) => {
                     track.enabled = !isMuted;
                 });
 
-                console.log("Stream captured via interception");
+                console.log("Stream captured with enhanced audio quality");
                 return stream;
             };
 
             // C. Start Session (SDK calls our intercepted gUM)
-            await conversation.startSession({
+            const firstMessage = generateFirstMessage();
+            console.log("Using personalized first message:", firstMessage);
+
+            const sessionResult = await conversation.startSession({
                 agentId: import.meta.env.VITE_ELEVENLABS_AGENT_ID,
                 overrides: {
                     agent: {
                         prompt: {
                             prompt: systemPrompt || "You are a helpful interviewer."
                         },
-                        firstMessage: "Hello! I've reviewed your application. Ready to begin?"
-                    }
+                        firstMessage: firstMessage,
+                        // Language Override: Set conversation language
+                        ...(language && { language: language })
+                    },
+                    // Voice Override: Use persona's voice if provided
+                    ...(voiceId && {
+                        tts: {
+                            voiceId: voiceId
+                        }
+                    })
                 }
             });
 
+            // Capture conversationId for report generation
+            // ElevenLabs may return conversationId in different formats
+            console.log("Session result from ElevenLabs:", sessionResult);
+
+            const conversationId = typeof sessionResult === 'string'
+                ? sessionResult
+                : sessionResult?.conversationId || sessionResult?.conversation_id || sessionResult?.id;
+
+            console.log("Extracted conversationId:", conversationId);
+
+            if (conversationId) {
+                conversationIdRef.current = conversationId;
+                console.log("ConversationId stored in ref:", conversationIdRef.current);
+            } else {
+                console.error("Failed to extract conversationId from session result");
+            }
+
             // D. Restore original function SAFELY after a short delay
-            // (SDK calls it asynchronously during connection)
             setTimeout(() => {
                 navigator.mediaDevices.getUserMedia = originalGetUserMedia;
             }, 2000);
 
         } catch (error) {
             console.error("Failed to start conversation:", error);
-            // Ensure restore
-            if (navigator.mediaDevices.getUserMedia.name !== 'getUserMedia') {
-                // Hard reset if needed, though bind keeps it safe usually
-            }
         }
     };
 
     const stopConversation = async () => {
+        // Set reportStatus FIRST, before ending session
+        // This ensures onEndCall's refetch sees 'generating' status
+        if (interviewId) {
+            try {
+                const interviewRef = doc(db, 'interviews', interviewId);
+                await updateDoc(interviewRef, { reportStatus: 'generating' });
+                console.log("ReportStatus set to 'generating' for interview:", interviewId);
+            } catch (err) {
+                console.error("Failed to set reportStatus:", err);
+            }
+        }
+
         await conversation.endSession();
+
         // Clean up stream
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
         }
+
         if (onEndCall) onEndCall();
+    };
+
+    // Leave session without generating report (emergency exit)
+    const leaveSession = async () => {
+        console.log("Leaving session without generating report...");
+
+        // Set flag so onDisconnect skips report generation
+        isLeavingRef.current = true;
+
+        await conversation.endSession();
+
+        // Clean up stream
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+
+        // Handle Firestore cleanup
+        const currentInterviewId = interviewIdRef.current;
+        if (currentInterviewId) {
+            try {
+                // If this interview has a parent (it's a followup), update parent's childId to null
+                if (parentId) {
+                    console.log("Updating parent interview to remove child reference...");
+                    await updateDoc(doc(db, 'interviews', parentId), {
+                        childId: null
+                    });
+                }
+
+                // Delete this interview document
+                await deleteDoc(doc(db, 'interviews', currentInterviewId));
+                console.log("Deleted abandoned interview:", currentInterviewId);
+            } catch (err) {
+                console.error("Failed to cleanup interview on leave:", err);
+            }
+        }
+
+        // Navigate to home (callback handles state updates)
+        if (onLeaveSession) {
+            onLeaveSession();
+        } else if (onEndCall) {
+            onEndCall(); // Fallback
+        }
     };
 
     // Auto-start Guard
@@ -174,10 +424,25 @@ const VoiceOrb = ({ isActive, onEndCall, systemPrompt }) => {
 
                         {/* Time Remaining */}
                         <div className="flex items-center gap-2">
-                            <Clock className="w-3 h-3 text-blue-500" />
+                            <Clock className={`w-3 h-3 ${remainingStyle.iconColor} ${remainingStyle.pulse ? 'animate-pulse' : ''}`} />
                             <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining</span>
-                            <span className="font-mono text-sm font-bold text-blue-600">{formatTimeLeft(durationSeconds)}</span>
+                            <span className={`font-mono text-sm font-bold ${remainingStyle.color} ${remainingStyle.pulse ? 'animate-pulse' : ''}`}>
+                                {formatTimeLeft(durationSeconds)}
+                            </span>
                         </div>
+
+                        {/* Divider */}
+                        <div className="w-px h-4 bg-gray-300/50" />
+
+                        {/* Leave Session (subtle exit) */}
+                        <button
+                            onClick={leaveSession}
+                            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                            title="Leave without saving"
+                        >
+                            <LogOut className="w-3 h-3" />
+                            <span className="font-medium">Leave</span>
+                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -289,15 +554,6 @@ const VoiceOrb = ({ isActive, onEndCall, systemPrompt }) => {
                     title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
                 >
                     {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                </button>
-
-                {/* End Call */}
-                <button
-                    onClick={stopConversation}
-                    className="w-20 h-20 rounded-full bg-red-500 text-white flex items-center justify-center shadow-2xl hover:bg-red-600 hover:scale-110 transition-all active:scale-95 duration-300"
-                    title="End Conversation"
-                >
-                    <PhoneOff className="w-8 h-8 fill-current" />
                 </button>
 
                 {/* Immersive / Focus Mode Toggle */}

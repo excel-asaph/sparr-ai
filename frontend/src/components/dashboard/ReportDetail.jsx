@@ -28,7 +28,6 @@ const CustomTick = ({ x, y, cx, cy, payload, setHoveredSkill }) => {
         <g
             className="cursor-pointer group"
             onMouseEnter={(e) => setHoveredSkill?.({ name: payload.value, mouseX: e.clientX, mouseY: e.clientY })}
-            onMouseMove={(e) => setHoveredSkill?.({ name: payload.value, mouseX: e.clientX, mouseY: e.clientY })}
             id={`tick-${skillId}`}
         >
             <circle cx={tx} cy={ty} r={30} fill="transparent" />
@@ -45,7 +44,6 @@ const CustomDot = ({ cx, cy, payload, setHoveredSkill }) => {
         <g
             className="cursor-pointer"
             onMouseEnter={(e) => setHoveredSkill?.({ name: payload.skill, mouseX: e.clientX, mouseY: e.clientY })}
-            onMouseMove={(e) => setHoveredSkill?.({ name: payload.skill, mouseX: e.clientX, mouseY: e.clientY })}
             id={`dot-${skillId}`}
         >
             <circle cx={cx} cy={cy} r={12} fill="transparent" />
@@ -57,14 +55,16 @@ const CustomDot = ({ cx, cy, payload, setHoveredSkill }) => {
 // Memoized Chart Component
 const RadarChartSection = React.memo(({ radarData, setHoveredSkill }) => {
     return (
-        <ResponsiveContainer width="100%" height={300}>
-            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                <PolarGrid stroke="#cbd5e1" strokeDasharray="3 3" />
-                <PolarAngleAxis dataKey="skill" tick={(props) => <CustomTick {...props} setHoveredSkill={setHoveredSkill} />} />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar name="Skills" dataKey="value" stroke="#2563EB" strokeWidth={3} fill="#3b82f6" fillOpacity={0.15} isAnimationActive={false} dot={(props) => <CustomDot {...props} setHoveredSkill={setHoveredSkill} />} className="skill-radar" />
-            </RadarChart>
-        </ResponsiveContainer>
+        <div className="w-full h-[300px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none">
+            <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                    <PolarGrid stroke="#cbd5e1" strokeDasharray="3 3" />
+                    <PolarAngleAxis dataKey="skill" tick={(props) => <CustomTick {...props} setHoveredSkill={setHoveredSkill} />} />
+                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+                    <Radar name="Skills" dataKey="value" stroke="#2563EB" strokeWidth={3} fill="#3b82f6" fillOpacity={0.15} isAnimationActive={false} dot={(props) => <CustomDot {...props} setHoveredSkill={setHoveredSkill} />} className="skill-radar" />
+                </RadarChart>
+            </ResponsiveContainer>
+        </div>
     );
 });
 
@@ -107,10 +107,10 @@ const PdfExportTemplate = ({ session, radarData, scoreColors }) => {
                         <svg className="w-full h-full transform -rotate-90">
                             <circle cx="80" cy="80" r="70" stroke="#f1f5f9" strokeWidth="10" fill="none" />
                             <circle cx="80" cy="80" r="70" stroke={scoreColors.fill} strokeWidth="10" fill="none"
-                                strokeDasharray="440" strokeDashoffset={440 - (440 * session.overallScore) / 100} strokeLinecap="round" />
+                                strokeDasharray="440" strokeDashoffset={440 - (440 * (session.overallScore || 0)) / 100} strokeLinecap="round" />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className={`text-5xl font-black ${scoreColors.color}`}>{session.overallScore}</span>
+                            <span className={`text-5xl font-black ${scoreColors.color}`}>{session.overallScore || 0}</span>
                             <span className="text-[10px] font-bold text-gray-400 uppercase mt-1">Score</span>
                         </div>
                     </div>
@@ -124,7 +124,7 @@ const PdfExportTemplate = ({ session, radarData, scoreColors }) => {
             {/* Timeline */}
             <div className="mb-8 border border-gray-200 rounded-2xl p-6">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Response Timeline • Key moments identified by {session.agent.name}</h4>
-                <FeedbackWaveform highlights={session.highlights} duration={session.recording?.duration || "15:00"} agentName={session.agent.name} />
+                <FeedbackWaveform highlights={session.highlights} duration={session.recording?.duration || "15:00"} agentName={session.agent.name} isExportMode={true} audioUrl={session.audioUrl} />
             </div>
 
             {/* Feedback & Recommendations Grid */}
@@ -135,15 +135,15 @@ const PdfExportTemplate = ({ session, radarData, scoreColors }) => {
                     <div className="space-y-6">
                         <div>
                             <div className="flex items-center gap-2 mb-2"><ThumbsUp className="w-4 h-4 text-emerald-500" /><span className="text-sm font-bold text-emerald-700">Strengths</span></div>
-                            <p className="text-xs text-gray-600 italic">"Excellent handling of the technical objection regarding concurrent users."</p>
+                            <p className="text-xs text-gray-600 italic">"{session.feedback?.strengths || 'Your approach showed solid fundamentals.'}"</p>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 mb-2"><ThumbsDown className="w-4 h-4 text-amber-500" /><span className="text-sm font-bold text-amber-700">Concerns</span></div>
-                            <p className="text-xs text-gray-600 italic">"You missed the opportunity to close on the budget timeline."</p>
+                            <p className="text-xs text-gray-600 italic">"{session.feedback?.concerns || 'Continue building on your strengths.'}"</p>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 mb-2"><div className="w-3.5 h-3.5 bg-blue-100 rounded-full flex items-center justify-center text-[10px] text-blue-600 font-bold">i</div><span className="text-sm font-bold text-blue-700">Suggestion</span></div>
-                            <p className="text-xs text-gray-600 italic">"Try pausing after key technical explanations to let the stakeholder digest the information."</p>
+                            <p className="text-xs text-gray-600 italic">"{session.feedback?.suggestion || 'Keep practicing!'}"</p>
                         </div>
                     </div>
                 </div>
@@ -151,9 +151,15 @@ const PdfExportTemplate = ({ session, radarData, scoreColors }) => {
                 <div className="border border-gray-200 rounded-2xl p-6">
                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-6 border-b border-gray-100 pb-2">Recommended Actions</h4>
                     <div className="space-y-4">
-                        <div className="flex gap-3"><Lightbulb className="w-4 h-4 text-gray-900 shrink-0" /> <span className="text-sm text-gray-800 font-medium">Review Objection Handling (Module 4)</span></div>
-                        <div className="flex gap-3"><BookOpen className="w-4 h-4 text-gray-900 shrink-0" /> <span className="text-sm text-gray-800 font-medium">Read: "The Art of the Close"</span></div>
-                        <div className="flex gap-3"><CheckCircle className="w-4 h-4 text-gray-900 shrink-0" /> <span className="text-sm text-gray-800 font-medium">Practice Pace Control (2-Min Drills)</span></div>
+                        {(session.recommendations || []).slice(0, 3).map((rec, idx) => (
+                            <div key={idx} className="flex gap-3">
+                                {rec.type === 'read' && <BookOpen className="w-4 h-4 text-gray-900 shrink-0" />}
+                                {rec.type === 'watch' && <Lightbulb className="w-4 h-4 text-gray-900 shrink-0" />}
+                                {rec.type === 'practice' && <CheckCircle className="w-4 h-4 text-gray-900 shrink-0" />}
+                                {!['read', 'watch', 'practice'].includes(rec.type) && <Lightbulb className="w-4 h-4 text-gray-900 shrink-0" />}
+                                <span className="text-sm text-gray-800 font-medium">{rec.title}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -289,17 +295,20 @@ const ReportDetail = ({ session, onViewResume }) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="h-full bg-white rounded-r-3xl rounded-l-none border border-gray-200 border-l-0 shadow-sm overflow-hidden flex flex-col"
+                className="h-full bg-transparent flex flex-col overflow-hidden"
             >
                 {/* Header */}
-                <div className="p-8 border-b border-gray-100 bg-gray-50/10">
+                <div className="px-8 pt-2 pb-2">
                     <div className="flex items-start justify-between">
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">{session.role}</h2>
-                            <div className="flex items-center gap-2.5 mt-3 text-sm">
-                                <span className="font-semibold text-gray-500 uppercase tracking-wider">{session.company}</span>
-
-                                <span className="text-gray-300">•</span>
+                            <div className="flex items-center gap-2.5 mt-1 text-sm">
+                                {session.company && (
+                                    <>
+                                        <span className="font-semibold text-gray-500 uppercase tracking-wider">{session.company}</span>
+                                        <span className="text-gray-300">•</span>
+                                    </>
+                                )}
                                 <span className="text-gray-500">Duration: <span className="font-medium text-gray-900">{session.recording?.duration || "15 min"}</span></span>
 
                                 {session.resumeContext?.storageUrl && (
@@ -345,18 +354,22 @@ const ReportDetail = ({ session, onViewResume }) => {
                 </div>
 
                 {/* Content Container (Scrollable) */}
-                <div className="flex-1 overflow-y-auto bg-gray-50/30">
+                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
 
                     {/* Voicemail Section */}
                     {session.voicemail && (
-                        <div className="p-8 pb-0">
+                        <div className="p-4 md:p-6 pb-0">
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                                <VoicemailPlayer voicemail={session.voicemail} agent={session.agent} />
+                                <VoicemailPlayer
+                                    voicemail={session.voicemail}
+                                    agent={session.agent}
+                                    message={session.interviewerMessage}
+                                />
                             </motion.div>
                         </div>
                     )}
 
-                    <div className="p-8 space-y-8">
+                    <div className="px-4 md:px-6 pt-2 pb-6 space-y-6">
                         {/* Unified Report Card */}
                         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
 
@@ -368,10 +381,10 @@ const ReportDetail = ({ session, onViewResume }) => {
                                         <svg className="w-full h-full transform -rotate-90">
                                             <circle cx="80" cy="80" r="70" stroke="#f1f5f9" strokeWidth="10" fill="none" />
                                             <circle cx="80" cy="80" r="70" stroke={scoreColors.fill} strokeWidth="10" fill="none"
-                                                strokeDasharray="440" strokeDashoffset={440 - (440 * session.overallScore) / 100} strokeLinecap="round" className="drop-shadow-sm transition-all duration-1000 ease-out" />
+                                                strokeDasharray="440" strokeDashoffset={440 - (440 * (session.overallScore || 0)) / 100} strokeLinecap="round" className="drop-shadow-sm transition-all duration-1000 ease-out" />
                                         </svg>
                                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                            <span className={`text-5xl font-black tracking-tighter ${scoreColors.color}`}>{session.overallScore}</span>
+                                            <span className={`text-5xl font-black tracking-tighter ${scoreColors.color}`}>{session.overallScore || 0}</span>
                                             <span className="text-[10px] font-bold text-gray-400 uppercase mt-1 tracking-widest">Score</span>
                                         </div>
                                     </div>
@@ -388,30 +401,37 @@ const ReportDetail = ({ session, onViewResume }) => {
                                     {/* Tooltip */}
                                     {createPortal(
                                         <AnimatePresence>
-                                            {hoveredSkill && session.skillsFeedback && session.skillsFeedback[hoveredSkill.name] && hoveredSkill.mouseX && !isExporting && (
-                                                <motion.div
-                                                    key="tooltip"
-                                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                                    style={{
-                                                        position: 'fixed',
-                                                        top: hoveredSkill.mouseY - 20,
-                                                        left: hoveredSkill.mouseX,
-                                                        transform: 'translate(-50%, -100%)',
-                                                        pointerEvents: 'none',
-                                                        zIndex: 9999
-                                                    }}
-                                                    className="w-64 bg-slate-900 text-white text-xs p-3 rounded-lg shadow-xl"
-                                                >
-                                                    <div className="flex items-start gap-2">
-                                                        <img src={session.agent.avatar} alt="Agent" className="w-6 h-6 rounded-full border border-gray-600 shrink-0" />
-                                                        <div>
-                                                            <p className="leading-normal text-gray-200 italic">"{session.skillsFeedback[hoveredSkill.name]}"</p>
+                                            {hoveredSkill && session.skillsFeedback && (() => {
+                                                // Normalize key: "Problem Solving" -> "problemSolving"
+                                                const rawName = hoveredSkill.name;
+                                                const camelName = rawName.charAt(0).toLowerCase() + rawName.slice(1).replace(/\s+/g, '');
+                                                const feedback = session.skillsFeedback[rawName] || session.skillsFeedback[camelName] || session.skillsFeedback[rawName.toLowerCase()];
+
+                                                return feedback && hoveredSkill.mouseX && !isExporting && (
+                                                    <motion.div
+                                                        key="tooltip"
+                                                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                        style={{
+                                                            position: 'fixed',
+                                                            top: hoveredSkill.mouseY - 20,
+                                                            left: hoveredSkill.mouseX > window.innerWidth * 0.7 ? hoveredSkill.mouseX - 20 : hoveredSkill.mouseX,
+                                                            transform: hoveredSkill.mouseX > window.innerWidth * 0.7 ? 'translate(-100%, -100%)' : 'translate(-50%, -100%)',
+                                                            pointerEvents: 'none',
+                                                            zIndex: 10000
+                                                        }}
+                                                        className="w-64 bg-slate-900 text-white text-xs p-3 rounded-lg shadow-xl"
+                                                    >
+                                                        <div className="flex items-start gap-2">
+                                                            <img src={session.agent.avatar} alt="Agent" className="w-6 h-6 rounded-full border border-gray-600 shrink-0" />
+                                                            <div>
+                                                                <p className="leading-normal text-gray-200 italic">"{feedback}"</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </motion.div>
-                                            )}
+                                                    </motion.div>
+                                                );
+                                            })()}
                                         </AnimatePresence>,
                                         document.body
                                     )}
@@ -426,7 +446,7 @@ const ReportDetail = ({ session, onViewResume }) => {
 
                             <div className="p-8 w-full bg-white">
                                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Response Timeline • Key moments identified by {session.agent.name}</h4>
-                                <FeedbackWaveform highlights={session.highlights} duration={session.recording?.duration || "15:00"} agentName={session.agent.name} />
+                                <FeedbackWaveform highlights={session.highlights} duration={session.recording?.duration || "15:00"} agentName={session.agent.name} audioUrl={session.audioUrl} />
                             </div>
 
                             <div className="border-t border-gray-100"></div>
@@ -444,7 +464,7 @@ const ReportDetail = ({ session, onViewResume }) => {
                                             </div>
                                             <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-sm text-gray-600 leading-relaxed relative">
                                                 <div className="absolute top-4 left-0 w-1 h-8 bg-emerald-500 rounded-r-full"></div>
-                                                "Excellent handling of the technical objection regarding concurrent users. You pivoted smoothly to the architecture discussion without getting defensive."
+                                                {`"${session.feedback?.strengths || 'Your approach showed solid fundamentals.'}"`}
                                             </div>
                                         </div>
                                         {/* Concerns */}
@@ -455,10 +475,10 @@ const ReportDetail = ({ session, onViewResume }) => {
                                             </div>
                                             <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-sm text-gray-600 leading-relaxed relative">
                                                 <div className="absolute top-4 left-0 w-1 h-8 bg-amber-500 rounded-r-full"></div>
-                                                "You missed the opportunity to close on the budget timeline. The prospect dropped a hint about Q4 budget, but you moved to the next topic."
+                                                {`"${session.feedback?.concerns || 'Continue building on your strengths.'}"`}
                                             </div>
                                         </div>
-                                        {/* Suggestion (New 3rd Item) */}
+                                        {/* Suggestion */}
                                         <div>
                                             <div className="flex items-center gap-2 mb-3">
                                                 <div className="w-4 h-4 bg-blue-100 rounded-full flex items-center justify-center">
@@ -468,7 +488,7 @@ const ReportDetail = ({ session, onViewResume }) => {
                                             </div>
                                             <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-sm text-gray-600 leading-relaxed relative">
                                                 <div className="absolute top-4 left-0 w-1 h-8 bg-blue-500 rounded-r-full"></div>
-                                                "Try pausing after key technical explanations to let the stakeholder digest the information. A simple 'Does that make sense?' check-in goes a long way."
+                                                {`"${session.feedback?.suggestion || 'Keep practicing to improve further!'}"`}
                                             </div>
                                         </div>
                                     </div>
@@ -478,33 +498,20 @@ const ReportDetail = ({ session, onViewResume }) => {
                                 <div className="p-8 lg:w-2/5 bg-white">
                                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-6">Recommendations</h4>
                                     <div className="space-y-4">
-                                        <div className="flex items-start gap-3 group cursor-pointer hover:bg-gray-50 p-2 -ml-2 rounded-lg transition-colors">
-                                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 group-hover:bg-gray-200 group-hover:border-gray-300 transition-colors">
-                                                <Lightbulb className="w-4 h-4 text-gray-900" />
+                                        {(session.recommendations || []).slice(0, 3).map((rec, idx) => (
+                                            <div key={idx} className="flex items-start gap-3 group cursor-pointer hover:bg-gray-50 p-2 -ml-2 rounded-lg transition-colors">
+                                                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 group-hover:bg-gray-200 group-hover:border-gray-300 transition-colors">
+                                                    {rec.type === 'read' && <BookOpen className="w-4 h-4 text-gray-900" />}
+                                                    {rec.type === 'watch' && <Lightbulb className="w-4 h-4 text-gray-900" />}
+                                                    {rec.type === 'practice' && <CheckCircle className="w-4 h-4 text-gray-900" />}
+                                                    {!['read', 'watch', 'practice'].includes(rec.type) && <Lightbulb className="w-4 h-4 text-gray-900" />}
+                                                </div>
+                                                <div>
+                                                    <span className="block text-xs font-bold text-gray-900 mb-0.5 group-hover:text-gray-900">{rec.title}</span>
+                                                    <span className="text-xs text-gray-500 leading-snug capitalize">{rec.type}: Recommended Resource</span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span className="block text-xs font-bold text-gray-900 mb-0.5 group-hover:text-gray-900">Review Objection Handling</span>
-                                                <span className="text-xs text-gray-500 leading-snug">Module 4: Technical Pivots</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-3 group cursor-pointer hover:bg-gray-50 p-2 -ml-2 rounded-lg transition-colors">
-                                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 group-hover:bg-gray-200 group-hover:border-gray-300 transition-colors">
-                                                <BookOpen className="w-4 h-4 text-gray-900" />
-                                            </div>
-                                            <div>
-                                                <span className="block text-xs font-bold text-gray-900 mb-0.5 group-hover:text-gray-900">Closing Techniques</span>
-                                                <span className="text-xs text-gray-500 leading-snug">Read: "The Art of the Close"</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-start gap-3 group cursor-pointer hover:bg-gray-50 p-2 -ml-2 rounded-lg transition-colors">
-                                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 border border-gray-200 group-hover:bg-gray-200 group-hover:border-gray-300 transition-colors">
-                                                <CheckCircle className="w-4 h-4 text-gray-900" />
-                                            </div>
-                                            <div>
-                                                <span className="block text-xs font-bold text-gray-900 mb-0.5 group-hover:text-gray-900">Practice Pace Control</span>
-                                                <span className="text-xs text-gray-500 leading-snug">Exercise: 2-Minute Pause Drills</span>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Download, ExternalLink, RefreshCw, Calendar, HardDrive } from 'lucide-react';
 
-const ResumesView = ({ interviews = [] }) => {
+const ResumesView = ({ interviews = [], initialSelectedUrl }) => {
     const [selectedResume, setSelectedResume] = useState(null);
     const [filteredResumes, setFilteredResumes] = useState([]);
 
@@ -20,7 +20,6 @@ const ResumesView = ({ interviews = [] }) => {
         const rootInterviews = interviews.filter(interview => {
             const isRoot = !interview.parentId;
             const hasUrl = interview.resumeContext?.storageUrl;
-            console.log(`Checking ${interview.jobContext?.company}: isRoot=${isRoot}, hasUrl=${!!hasUrl}`, interview.resumeContext);
             return isRoot && hasUrl;
         });
 
@@ -46,11 +45,23 @@ const ResumesView = ({ interviews = [] }) => {
 
         setFilteredResumes(processedResumes);
 
-        // Auto-select first if available and nothing selected
-        if (processedResumes.length > 0 && !selectedResume) {
-            setSelectedResume(processedResumes[0]);
+        // Auto-select logic
+        if (processedResumes.length > 0) {
+            // 1. Try to match the requested URL
+            if (initialSelectedUrl) {
+                const match = processedResumes.find(r => r.url === initialSelectedUrl);
+                if (match) {
+                    setSelectedResume(match);
+                } else if (!selectedResume) {
+                    setSelectedResume(processedResumes[0]);
+                }
+            }
+            // 2. Fallback to first if nothing selected
+            else if (!selectedResume) {
+                setSelectedResume(processedResumes[0]);
+            }
         }
-    }, [interviews]);
+    }, [interviews, initialSelectedUrl]);
 
 
     // Utility: Format Date

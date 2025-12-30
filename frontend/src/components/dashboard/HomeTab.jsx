@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Mic, FileText, Grid, Plus, Clock, ExternalLink, Activity, Target, ArrowRight, Sparkles, Layers, X } from 'lucide-react';
+import { Play, Mic, FileText, Grid, Plus, Clock, ExternalLink, Activity, Target, ArrowRight, Sparkles, Layers, X, Link2, BarChart3, ScanSearch } from 'lucide-react';
 
 import SessionSetupWizard from './SessionSetupWizard';
 import { PERSONAS } from '../../data/personas';
@@ -117,7 +117,7 @@ const HomeTab = ({ onStartSession, recentSessions = [], isLoadingRecent = false,
                                 <Play className="w-4 h-4 fill-current" />
                                 Start Session
                             </button>
-                            <span className="text-sm font-medium text-blue-200 bg-white/10 px-4 py-2 rounded-xl">~15 mins</span>
+                            <span className="text-sm font-medium text-blue-200 bg-white/10 px-4 py-2 rounded-xl">~5 mins</span>
                         </div>
                     </div>
 
@@ -155,32 +155,18 @@ const HomeTab = ({ onStartSession, recentSessions = [], isLoadingRecent = false,
                             </div>
 
                             <div className="relative z-10 mt-auto w-[55%]">
-                                <button className="bg-[#333] hover:bg-[#444] text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors border border-white/10 flex items-center gap-2 group/btn w-fit">
+                                <button
+                                    onClick={onNavigateToSpaces}
+                                    className="bg-[#333] hover:bg-[#444] text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors border border-white/10 flex items-center gap-2 group/btn w-fit"
+                                >
                                     Enter Space
                                     <ArrowRight className="w-3 h-3 text-gray-400 opacity-0 -translate-x-2 group-hover/btn:opacity-100 group-hover/btn:translate-x-0 transition-all duration-300" />
                                 </button>
                             </div>
 
-                            {/* Visual: Abstract Space SVG */}
-                            <div className="absolute top-1/2 -translate-y-1/2 right-6 w-[120px] h-[90px] rounded-xl overflow-hidden bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-white/10 group-hover:scale-105 transition-transform duration-500 origin-center">
-                                {/* Abstract Shapes */}
-                                <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                    <path d="M0 100 L100 0 L100 100 Z" fill="url(#grad1)" opacity="0.2" />
-                                    <circle cx="80" cy="20" r="15" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-purple-400 opacity-50" />
-                                    <circle cx="80" cy="20" r="8" fill="currentColor" className="text-purple-500/30" />
-                                    <path d="M0 80 Q 50 50 100 80" stroke="currentColor" strokeWidth="0.5" fill="none" className="text-blue-400/30" />
-                                    <defs>
-                                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" className="text-purple-600" stopColor="currentColor" />
-                                            <stop offset="100%" className="text-blue-600" stopColor="currentColor" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-
-                                {/* Floating Sparkle Badge */}
-                                <div className="absolute -bottom-3 -left-3 w-10 h-10 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-yellow-500/30 shadow-lg shadow-yellow-900/20 z-20">
-                                    <Sparkles className="w-5 h-5 text-yellow-400 fill-yellow-400/20" />
-                                </div>
+                            {/* Visual: Clean Icon Orb */}
+                            <div className="absolute top-1/2 -translate-y-1/2 right-6 w-20 h-20 rounded-2xl bg-[#0f0f0f] border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:border-white/30 transition-all duration-300">
+                                <Link2 className="w-9 h-9 text-gray-400 group-hover:text-white transition-colors duration-300" />
                             </div>
                         </motion.div>
 
@@ -206,28 +192,9 @@ const HomeTab = ({ onStartSession, recentSessions = [], isLoadingRecent = false,
                                 </button>
                             </div>
 
-                            {/* Visual: Abstract Chart SVG */}
-                            <div className="absolute top-1/2 -translate-y-1/2 right-6 w-[120px] h-[90px] rounded-xl overflow-hidden bg-gradient-to-br from-orange-900/20 to-red-900/20 border border-white/10 group-hover:scale-105 transition-transform duration-500 origin-center">
-                                <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                    {/* Bar Chart Abstract */}
-                                    <rect x="20" y="60" width="10" height="40" className="fill-orange-500/20" />
-                                    <rect x="40" y="40" width="10" height="60" className="fill-orange-500/30" />
-                                    <rect x="60" y="50" width="10" height="50" className="fill-orange-500/40" />
-                                    <rect x="80" y="30" width="10" height="70" className="fill-orange-500/50" />
-                                    {/* Line Graph */}
-                                    <path d="M10 80 L30 60 L50 70 L70 30 L90 20" fill="none" stroke="currentColor" strokeWidth="1" className="text-orange-400" />
-                                </svg>
-
-                                {/* Overlay Elements */}
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
-                                    <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" />
-                                    <div className="w-1 h-5 bg-green-400 rounded-full animate-pulse delay-75" />
-                                    <div className="w-1 h-8 bg-green-400 rounded-full animate-pulse delay-150" />
-                                    <div className="w-1 h-4 bg-green-400 rounded-full animate-pulse delay-100" />
-                                </div>
-                                <div className="absolute bottom-2 right-2 w-6 h-6 bg-black/60 backdrop-blur rounded-full flex items-center justify-center border border-white/10">
-                                    <span className="text-[10px] font-bold text-white">Aa</span>
-                                </div>
+                            {/* Visual: Clean Icon Orb */}
+                            <div className="absolute top-1/2 -translate-y-1/2 right-6 w-20 h-20 rounded-2xl bg-[#0f0f0f] border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:border-white/30 transition-all duration-300">
+                                <BarChart3 className="w-9 h-9 text-gray-400 group-hover:text-white transition-colors duration-300" />
                             </div>
                         </motion.div>
 
@@ -253,42 +220,9 @@ const HomeTab = ({ onStartSession, recentSessions = [], isLoadingRecent = false,
                                 </button>
                             </div>
 
-                            {/* Visual: Editing UI */}
-                            <div className="absolute top-1/2 -translate-y-1/2 right-6 w-[120px] h-[90px] rounded-xl overflow-hidden bg-gray-800 border-2 border-pink-500/50 group-hover:border-pink-500 transition-colors group-hover:scale-105 duration-500 origin-center shadow-lg shadow-pink-900/20">
-                                <svg className="absolute inset-0 w-full h-full opacity-60" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                    {/* Document Background */}
-                                    <rect x="15" y="15" width="70" height="85" rx="4" className="fill-white/5" />
-                                    {/* Content Blocks */}
-                                    <circle cx="35" cy="35" r="10" className="fill-emerald-400/30" />
-                                    <rect x="50" y="30" width="25" height="4" rx="2" className="fill-white/20" />
-                                    <rect x="50" y="38" width="15" height="4" rx="2" className="fill-white/10" />
-
-                                    <rect x="25" y="55" width="50" height="4" rx="2" className="fill-emerald-500/30" />
-                                    <rect x="25" y="65" width="40" height="4" rx="2" className="fill-white/10" />
-                                    <rect x="25" y="75" width="45" height="4" rx="2" className="fill-white/10" />
-
-                                    {/* Scan Effect */}
-                                    <rect x="0" y="0" width="100" height="100" fill="url(#scan-grad)" className="animate-pulse" />
-                                    <defs>
-                                        <linearGradient id="scan-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" stopColor="transparent" />
-                                            <stop offset="50%" stopColor="rgba(236, 72, 153, 0.1)" />
-                                            <stop offset="100%" stopColor="transparent" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                                {/* Selection Handles */}
-                                <div className="absolute top-0 left-0 w-2 h-2 bg-pink-500" />
-                                <div className="absolute top-0 right-0 w-2 h-2 bg-pink-500" />
-                                <div className="absolute bottom-0 left-0 w-2 h-2 bg-pink-500" />
-                                <div className="absolute bottom-0 right-0 w-2 h-2 bg-pink-500" />
-
-                                {/* Toolbar */}
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 bg-black/80 rounded p-1 border border-white/10">
-                                    <div className="w-3 h-3 rounded-sm border border-white/40" />
-                                    <div className="w-3 h-3 rounded-sm bg-pink-500" />
-                                    <div className="w-3 h-3 rounded-sm border border-white/40" />
-                                </div>
+                            {/* Visual: Clean Icon Orb */}
+                            <div className="absolute top-1/2 -translate-y-1/2 right-6 w-20 h-20 rounded-2xl bg-[#0f0f0f] border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:border-white/30 transition-all duration-300">
+                                <ScanSearch className="w-9 h-9 text-gray-400 group-hover:text-white transition-colors duration-300" />
                             </div>
                         </motion.div>
                     </div>

@@ -7,7 +7,7 @@ import SpaceLoader from './SpaceLoader';
 import { Trash2 } from 'lucide-react';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 
-const SpacesTab = ({ allInterviews = [], onStartSession, onOpenWorkflow, onDeleteInterview }) => { // Expecting allInterviews passed from Dashboard
+const SpacesTab = ({ allInterviews = [], onStartSession, onOpenWorkflow, onDeleteInterview, onNavigateToResumes }) => { // Expecting allInterviews passed from Dashboard
     // State
     const [searchQuery, setSearchQuery] = useState('');
     const [groupBy, setGroupBy] = useState('none'); // 'none', 'company', 'role'
@@ -240,6 +240,7 @@ const SpacesTab = ({ allInterviews = [], onStartSession, onOpenWorkflow, onDelet
                 onClose={() => setSelectedInterview(null)}
                 onStartSession={onStartSession}
                 allInterviews={allInterviews}
+                onNavigateToResumes={onNavigateToResumes}
             />
         );
     }

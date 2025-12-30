@@ -53,3 +53,10 @@ export const LANGUAGE_NAMES = {
     'sk': 'Slovak', 'hr': 'Croatian', 'it': 'Italian', 'de': 'German',
     'pl': 'Polish', 'dk': 'Danish'
 };
+
+// Map flag codes to ElevenLabs language codes
+export const FLAG_TO_ELEVENLABS_LANG = {
+    'us': 'en', 'es': 'es', 'de': 'de', 'it': 'it',
+    'ru': 'ru', 'pl': 'pl', 'ro': 'ro', 'sk': 'sk',
+    'hr': 'hr', 'dk': 'da'  // Danish
+};
