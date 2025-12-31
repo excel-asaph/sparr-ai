@@ -970,7 +970,7 @@ IMPORTANT: Provide 3-5 highlights, focusing on the most significant moments. Mix
  * SERVER STARTUP
  * ============================================================================ */
 
-/** @type {number} Server port */
-const PORT = 3000;
+/** @type {number} Server port - uses PORT env variable for Cloud Run compatibility */
+const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => console.log(`✅ Backend running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`✅ Backend running on port ${PORT}`));
