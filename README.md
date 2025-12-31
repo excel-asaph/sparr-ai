@@ -9,8 +9,8 @@
 
 ## Demo Video
 
-[![Watch the Demo](https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/8WJDem5fetY)
-[https://github.com/excel-asaph/sparr-ai](https://youtu.be/8WJDem5fetY)
+[![Watch the Demo](https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=red&logo=youtube)](https://youtu.be/8WJDem5fetY)
+> *[https://youtu.be/8WJDem5fetY](https://youtu.be/8WJDem5fetY)*
 > *3-minute walkthrough showing the full interview experience*
 
 ---
