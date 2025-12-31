@@ -2,7 +2,8 @@
 
 > **Train with the AI interviewer that challenges you, probes your weaknesses, and prepares you for reality.**
 
-![Sparr AI Banner](frontend/public/logo_icon.png)
+<!-- ![Sparr AI Banner](frontend/public/logo_icon.png) -->
+![Sparr AI Banner](frontend/src/assets/screenshots/landingpage.png)
 
 ---
 
@@ -104,7 +105,7 @@ The language is detected dynamically and enforced in the system prompt so the in
 |---------|-------------|
 | **Session Spaces** | Continue interviews with full context from previous sessions — progressive improvement |
 | **5 Interviewer Personas** | Each with unique voice, personality, and questioning style |
-| **Resume-Aware Probing** | AI targets YOUR specific weaknesses, not generic questions |
+| **Resume-Aware Probing** | Gemini targets YOUR specific weaknesses, not generic questions |
 | **10+ Languages** | Ellen conducts full interviews in multiple languages |
 | **Detailed Reports** | Timestamped feedback, score breakdowns, specific improvement areas |
 | **Company-Specific Archetypes** | Job descriptions generated for Google, Amazon, Meta, custom companies |
@@ -115,15 +116,24 @@ The language is detected dynamically and enforced in the system prompt so the in
 
 ## Screenshots
 
-> **Note:** Add your screenshots to `screenshots/` directory before final submission
+### Landing Page — Start Your Journey
+> Users can begin their interview prep by selecting a role, experience level, and target company. The onboarding wizard guides you step-by-step.
 
-| Landing Page | Session Wizard | Interview |
-|--------------|----------------|-----------|
-| ![Landing](screenshots/landing.png) | ![Wizard](screenshots/wizard.png) | ![Interview](screenshots/interview.png) |
+![Landing Page](frontend/src/assets/screenshots/landing-sparr.gif)
 
-| Workflow Builder | Report View | Spaces Chain |
-|------------------|-------------|--------------|
-| ![Workflow](screenshots/workflow.png) | ![Report](screenshots/report.png) | ![Spaces](screenshots/spaces.png) |
+---
+
+### Performance Report — Get Actionable Feedback
+> After each interview, receive a detailed AI-generated report with timestamped feedback, performance scores, and specific areas for improvement with audio playback.
+
+![Performance Report](frontend/src/assets/screenshots/report-sparr.gif)
+
+---
+
+### Session Spaces — Continue Where You Left Off
+> Don't start from scratch! Resume your interview journey with full context from previous sessions. The AI remembers your weaknesses and pushes you harder.
+
+![Session Spaces](frontend/src/assets/screenshots/space-sparr.gif)
 
 ---
 
@@ -208,7 +218,7 @@ The **ElevenLabs React SDK** (`@elevenlabs/react`) powers our voice experience:
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 ```mermaid
 flowchart TB
