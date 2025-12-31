@@ -1,7 +1,17 @@
+/**
+ * @fileoverview Workflow Builder Canvas Component
+ * 
+ * Interactive ReactFlow-based visualization of linked interview chains.
+ * Features drag-and-drop canvas, custom node types (interview cards, add buttons),
+ * panel inspectors for session details, and session spawning capabilities.
+ * 
+ * @module components/dashboard/WorkflowBuilder
+ * @requires reactflow
+ */
+
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import ReactFlow, {
     Background,
-    Controls,
     addEdge,
     useNodesState,
     useEdgesState,
@@ -14,7 +24,7 @@ import 'reactflow/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     X, FileText, AlertCircle, Play, Plus, Minus, Maximize, Lock, Unlock, MousePointer, Hand, MessageSquare,
-    Activity, CheckCircle2, User, Trash2, Layout, ArrowRight, ArrowDown, Undo2, Redo2, History,
+    CheckCircle2, Trash2, Layout, ArrowRight, ArrowDown, Undo2, Redo2, History,
     ListChecks, CircleDashed, ChevronDown, BarChart3, Lightbulb, MessageSquareText, UserCircle2
 } from 'lucide-react';
 import { getLayoutedElements } from '../../utils/layoutUtils';

@@ -1,6 +1,18 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react';
+/**
+ * @fileoverview Voice Interview Orb Component
+ * 
+ * Core voice interaction interface for mock interviews. Integrates with
+ * ElevenLabs Conversational AI SDK for real-time voice conversations.
+ * Features immersive mode, session timer, workbook notes, and visual
+ * audio feedback through animated orb visualization.
+ * 
+ * @module components/dashboard/VoiceOrb
+ * @requires @elevenlabs/react
+ */
+
+import { useEffect, useRef, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, PhoneOff, Settings2, Maximize2, Minimize2, Wifi, Clock, Battery, Notebook, X, LogOut } from 'lucide-react';
+import { Mic, MicOff, Maximize2, Minimize2, Wifi, Clock, Notebook, X, LogOut } from 'lucide-react';
 import { useConversation } from '@elevenlabs/react';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';

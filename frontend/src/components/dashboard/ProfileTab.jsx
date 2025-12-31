@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
+/**
+ * @fileoverview User Profile Tab Component
+ * 
+ * Displays user profile information, overall interview statistics,
+ * performance metrics across sessions, and logout functionality.
+ * 
+ * @module components/dashboard/ProfileTab
+ */
+
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, BarChart3, SlidersHorizontal, LogOut, Camera, Check, Clock, Target, TrendingUp, Zap } from 'lucide-react';
+import { User, BarChart3, SlidersHorizontal, LogOut, Target, TrendingUp, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PERSONAS } from '../../data/personas';
 

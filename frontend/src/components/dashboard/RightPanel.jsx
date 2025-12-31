@@ -1,4 +1,14 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * @fileoverview Interview Coaching Right Panel Component
+ * 
+ * Context panel displayed during mock interviews showing session info,
+ * interviewer details, language context, and rotating coaching tips.
+ * Tips are phase-based (early, mid, late) for contextual guidance.
+ * 
+ * @module components/dashboard/RightPanel
+ */
+
+import { useState, useEffect } from 'react';
 import { Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LANGUAGE_NAMES } from '../../data/personas';

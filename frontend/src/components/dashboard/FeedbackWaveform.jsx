@@ -1,4 +1,14 @@
-import React, { useState, useRef } from 'react';
+/**
+ * @fileoverview Feedback Waveform Visualization Component
+ * 
+ * Interactive audio waveform display with timestamped interview highlights.
+ * Supports audio playback, visual markers for success/warning/critical moments,
+ * and hover-activated detail cards showing Q&A context.
+ * 
+ * @module components/dashboard/FeedbackWaveform
+ */
+
+import { useState, useRef } from 'react';
 import { Play, Pause, AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

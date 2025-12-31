@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * @fileoverview Interview History Explorer Component
+ * 
+ * Full-screen modal for navigating linked interview chains (Spaces).
+ * Features timeline sidebar, session navigation, Progress Dashboard view
+ * for current sessions, and Report Detail view for historical sessions.
+ * 
+ * @module components/dashboard/HistoryExplorer
+ */
+
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronRight, ChevronLeft, Calendar, FileText, BarChart2, GitCommit, PlayCircle } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Calendar, GitCommit } from 'lucide-react';
 import { buildHistoryChain } from '../../utils/historyUtils';
 import ReportDetail from './ReportDetail';
 import ProgressDashboard from './ProgressDashboard';

@@ -1,5 +1,13 @@
-import React from 'react';
-import { Home, Mic, FileText, Grid, PanelLeft, CassetteTape, LayoutDashboard } from 'lucide-react';
+/**
+ * @fileoverview Dashboard Left Sidebar Navigation Component
+ * 
+ * Collapsible sidebar with navigation tabs (Home, Reports, Spaces)
+ * and user profile button. Supports persistent collapse state via localStorage.
+ * 
+ * @module components/dashboard/LeftSidebar
+ */
+
+import { Home, PanelLeft, CassetteTape, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 

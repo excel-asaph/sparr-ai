@@ -1,10 +1,33 @@
+/**
+ * @fileoverview Protected Route Guard Component
+ * 
+ * Restricts access to authenticated users only. Redirects unauthenticated
+ * users to login or landing page based on their session history.
+ * 
+ * @module components/auth/ProtectedRoute
+ */
+
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
+/**
+ * Route guard for protected pages requiring authentication.
+ * 
+ * Redirect Logic:
+ * - Authenticated users → Allow access
+ * - Known returning users → Login (with return location preserved)
+ * - Unknown users → Landing page
+ * 
+ * @component
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - Protected content to render
+ * @returns {JSX.Element} Children, redirect, or loading state
+ */
 const ProtectedRoute = ({ children }) => {
     const { currentUser, loading } = useAuth();
     const location = useLocation();
 
+    // Show loading state while auth initializes
     if (loading) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-gray-900 text-white">
@@ -13,27 +36,20 @@ const ProtectedRoute = ({ children }) => {
         );
     }
 
-    // Strict Protection: Must be authenticated
-    // Note: If you want to allow ANONYMOUS users to verify before dashboard, 
-    // you might need to relax this OR rely on LandingPage's explicit redirect logic.
-    // However, Dashboard usually requires full account for persistence.
-    // If we allow Guest Dashboard, we change this check.
-    // User Requirement: "if session has expired we send the authpage".
-    // "if user is not... temporarily save... then send authentication page".
-    // This implies Dashboard is BEHIND Auth.
-
+    // Handle unauthenticated access
     if (!currentUser) {
         const lastKnownUser = localStorage.getItem('lastKnownUser');
 
-        // If we know who they are (Expired Session), send to Login to re-auth
+        // Known user with expired session → Login with return path
         if (lastKnownUser) {
             return <Navigate to="/login" state={{ from: location }} replace />;
         }
 
-        // If completely new/unknown, send to Landing Page to start fresh
+        // Unknown user → Landing page
         return <Navigate to="/" replace />;
     }
 
+    // Allow authenticated access
     return children;
 };
 

@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * @fileoverview Dashboard Home Tab Component
+ * 
+ * Main landing view within the dashboard displaying welcome message,
+ * quick actions, recent session cards, and session statistics.
+ * Provides entry points to start new interviews or continue existing ones.
+ * 
+ * @module components/dashboard/HomeTab
+ */
+
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Mic, FileText, Grid, Plus, Clock, ExternalLink, Activity, Target, ArrowRight, Sparkles, Layers, X, Link2, BarChart3, ScanSearch } from 'lucide-react';
+import { Play, Mic, Plus, Clock, Target, ArrowRight, Layers, X, Link2, BarChart3, ScanSearch } from 'lucide-react';
 
 import SessionSetupWizard from './SessionSetupWizard';
 import { PERSONAS } from '../../data/personas';

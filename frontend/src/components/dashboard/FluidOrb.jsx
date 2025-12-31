@@ -1,4 +1,17 @@
-import React, { useRef } from 'react';
+/**
+ * @fileoverview Fluid Orb WebGL Visualization Component
+ * 
+ * Animated 3D orb using React Three Fiber with custom GLSL shaders.
+ * Creates dynamic color-shifting visual effects based on voice activity.
+ * Features fan blade patterns and ripple effects for speaking indication.
+ * 
+ * @module components/dashboard/FluidOrb
+ * @requires @react-three/fiber
+ * @requires @react-three/drei
+ * @requires three
+ */
+
+import { useRef } from 'react';
 import { Canvas, useFrame, extend } from '@react-three/fiber';
 import { Circle, shaderMaterial } from '@react-three/drei';
 import * as THREE from 'three';

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { SiGoogle, SiAmazon, SiMeta, SiNetflix } from 'react-icons/si';
 import { FaMicrosoft } from 'react-icons/fa';
-import SparrLoader from '../components/SparrLoader';
 import ShimmeringText from '../components/ui/ShimmeringText';
 
 

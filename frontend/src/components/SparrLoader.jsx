@@ -1,25 +1,54 @@
+/**
+ * @fileoverview Sparr Branded Loading Spinner
+ * 
+ * Animated loading spinner component featuring the Sparr AI brand mark
+ * with orbital rings, pulsing glow, and optional loading text.
+ * 
+ * @module components/SparrLoader
+ * @requires framer-motion
+ */
+
 import { motion } from 'framer-motion';
 
+/**
+ * Animated loading spinner with Sparr AI branding.
+ * 
+ * Features multi-layered animation:
+ * - Outer dashed orbital ring (slow rotation)
+ * - Inner cyan tech ring (fast counter-rotation)
+ * - Core brand mark SVG (pulsing rotation)
+ * - Ambient glow effect
+ * 
+ * @component
+ * @param {Object} props
+ * @param {number} [props.size=64] - Diameter of the loader in pixels
+ * @param {string|null} [props.text=null] - Optional loading text to display
+ * @param {string} [props.className=''] - Additional CSS classes
+ * @returns {JSX.Element} Animated loading spinner
+ * 
+ * @example
+ * <SparrLoader size={80} text="Loading..." />
+ */
 const SparrLoader = ({ size = 64, text = null, className = "" }) => {
     return (
         <div className={`flex flex-col items-center justify-center gap-4 ${className}`}>
             <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
 
-                {/* Outer Orbital Ring */}
+                {/* Outer Dashed Orbital Ring */}
                 <motion.div
                     className="absolute inset-0 border-2 border-dashed border-blue-200 rounded-full"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                 />
 
-                {/* Inner Tech Ring (Cyan) */}
+                {/* Inner Tech Ring (Cyan, Counter-rotating) */}
                 <motion.div
                     className="absolute inset-2 border-2 border-cyan-500 rounded-full border-t-transparent border-l-transparent"
                     animate={{ rotate: -360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 />
 
-                {/* Core "Sparr" Blades (The Brand Mark) */}
+                {/* Core Brand Mark SVG */}
                 <motion.svg
                     width={size * 0.5}
                     height={size * 0.5}
@@ -50,7 +79,7 @@ const SparrLoader = ({ size = 64, text = null, className = "" }) => {
                     />
                 </motion.svg>
 
-                {/* Pulsing Core Glow */}
+                {/* Pulsing Core Glow Effect */}
                 <motion.div
                     className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl"
                     animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.3, 0.6, 0.3] }}
@@ -58,6 +87,7 @@ const SparrLoader = ({ size = 64, text = null, className = "" }) => {
                 />
             </div>
 
+            {/* Optional Loading Text */}
             {text && (
                 <motion.div
                     initial={{ opacity: 0 }}

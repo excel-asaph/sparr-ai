@@ -1,4 +1,12 @@
-import React from 'react';
+/**
+ * @fileoverview Interview Workbook/Scratchpad Component
+ * 
+ * In-interview note-taking overlay allowing candidates to draft notes,
+ * outline STAR method answers, and write pseudo-code. Supports markdown.
+ * 
+ * @module components/dashboard/Workbook
+ */
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Notebook } from 'lucide-react';
 

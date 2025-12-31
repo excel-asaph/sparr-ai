@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, Trash2, X } from 'lucide-react';
+/**
+ * @fileoverview Delete Confirmation Modal Component
+ * 
+ * Modal dialog for confirming interview session deletion.
+ * Requires users to type the interview ID to confirm, with special
+ * warnings for linked interview chains (Spaces).
+ * 
+ * @module components/dashboard/DeleteConfirmationModal
+ */
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { AlertCircle, Trash2 } from 'lucide-react';
 
 const DeleteConfirmationModal = ({ interview, onConfirm, onCancel, isDeleting }) => {
     const [confirmId, setConfirmId] = useState('');

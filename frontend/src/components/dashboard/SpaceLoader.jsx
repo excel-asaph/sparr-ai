@@ -1,4 +1,13 @@
-import React, { useEffect, useState } from 'react';
+/**
+ * @fileoverview Space Loading Animation Component
+ * 
+ * Transition loader displayed when entering a Space (linked interview chain).
+ * Shows sequential animated messages with shimmer text effect.
+ * 
+ * @module components/dashboard/SpaceLoader
+ */
+
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ShimmeringText from '../ui/ShimmeringText';
 

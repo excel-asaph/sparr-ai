@@ -1,5 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, Download, ExternalLink, RefreshCw, Calendar, HardDrive } from 'lucide-react';
+/**
+ * @fileoverview Resume Viewer Component
+ * 
+ * Displays uploaded resumes from interview sessions with PDF preview.
+ * Deduplicates resumes by showing only root interviews (not follow-ups).
+ * 
+ * @module components/dashboard/ResumesView
+ */
+
+import { useState, useEffect } from 'react';
+import { FileText, ExternalLink, Calendar, HardDrive } from 'lucide-react';
 
 const ResumesView = ({ interviews = [], initialSelectedUrl }) => {
     const [selectedResume, setSelectedResume] = useState(null);

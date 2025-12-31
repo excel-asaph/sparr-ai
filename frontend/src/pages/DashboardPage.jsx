@@ -1,6 +1,16 @@
+/**
+ * @fileoverview Main Dashboard Page Component
+ * 
+ * Central hub of the application containing tab-based navigation,
+ * interview session management, and voice agent integration.
+ * Orchestrates state between sidebar, content tabs, and interview panels.
+ * 
+ * @module pages/DashboardPage
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Import Auth
+import { useAuth } from '../contexts/AuthContext';
 import LeftSidebar from '../components/dashboard/LeftSidebar';
 import VoiceOrb from '../components/dashboard/VoiceOrb';
 import RightPanel from '../components/dashboard/RightPanel';
@@ -13,7 +23,6 @@ import SpacesTab from '../components/dashboard/SpacesTab';
 import ResumesView from '../components/dashboard/ResumesView';
 import ProfileTab from '../components/dashboard/ProfileTab';
 
-// ... (inside DashboardPage)
 
 
 const DashboardPage = () => {

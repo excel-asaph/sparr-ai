@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Spaces Tab Component
+ * 
+ * Interview chain management view showing linked interview sessions (Spaces).
+ * Features grid/grouped views, search, filtering by Space/Single status,
+ * and navigation to WorkflowBuilder for conversation flow visualization.
+ * 
+ * @module components/dashboard/SpacesTab
+ */
+
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Layers, LayoutGrid, Calendar, Clock, ArrowRight, User } from 'lucide-react';

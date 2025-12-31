@@ -1,9 +1,30 @@
+/**
+ * @fileoverview Login Page Component
+ * 
+ * Provides Google OAuth authentication interface with animated UI.
+ * Handles onboarding flow redirects and session recovery.
+ * 
+ * @module pages/LoginPage
+ */
+
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { SiGoogle } from 'react-icons/si';
 
+/**
+ * Login page with Google authentication.
+ * 
+ * Features:
+ * - Animated branding panel with scanning effect
+ * - Google OAuth sign-in
+ * - Preserves navigation state for post-login redirect
+ * - Detects onboarding flow for contextual messaging
+ * 
+ * @component
+ * @returns {JSX.Element} Login page UI
+ */
 const LoginPage = () => {
     const { loginWithGoogle, currentUser } = useAuth();
     const navigate = useNavigate();
@@ -12,12 +33,17 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Detect if coming from onboarding flow
+    // Check if user is coming from onboarding flow
     const isFromOnboarding = searchParams.get('from') === 'onboarding';
 
-    // Redirect to where they came from (with state), or dashboard
+    // Determine redirect destination after login
     const targetLocation = location.state?.from || { pathname: '/dashboard' };
 
+    /**
+     * Handles Google OAuth login flow.
+     * Navigates to target location on success.
+     * @async
+     */
     const handleGoogleLogin = async () => {
         try {
             setError('');
@@ -28,7 +54,6 @@ const LoginPage = () => {
                 state: location.state?.pendingSession
             });
         } catch (err) {
-            console.error("Login Failed", err);
             setError('Failed to sign in with Google. Please try again.');
         } finally {
             setLoading(false);
@@ -46,10 +71,10 @@ const LoginPage = () => {
                     backgroundSize: '40px 40px'
                 }}></div>
 
-                {/* Ambient Gradient */}
+                {/* Ambient Gradient Overlay */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-white/50 to-white pointer-events-none" />
 
-                {/* Laser Scan Line */}
+                {/* Animated Laser Scan Effect */}
                 <motion.div
                     className="absolute left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_15px_rgba(96,165,250,0.5)] pointer-events-none z-0"
                     animate={{ top: ['0%', '100%'] }}
@@ -86,7 +111,7 @@ const LoginPage = () => {
                 </div>
             </div>
 
-            {/* Right Panel - Sign In */}
+            {/* Right Panel - Sign In Form */}
             <div className="w-[60%] flex flex-col justify-center items-center bg-white px-24">
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
@@ -109,7 +134,7 @@ const LoginPage = () => {
                         </p>
                     </div>
 
-                    {/* Error Message */}
+                    {/* Error Message Display */}
                     {error && (
                         <motion.div
                             initial={{ opacity: 0, y: -10 }}

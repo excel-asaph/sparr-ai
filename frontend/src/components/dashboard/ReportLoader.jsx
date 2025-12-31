@@ -1,9 +1,17 @@
-import React, { useEffect, useState } from 'react';
+/**
+ * @fileoverview Report Generation Loader Component
+ * 
+ * Animated loading state shown while Gemini generates the interview report.
+ * Displays rotating contextual messages with shimmer text effect.
+ * 
+ * @module components/dashboard/ReportLoader
+ */
+
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ShimmeringText from '../ui/ShimmeringText';
-import { Sparkles } from 'lucide-react';
 
-const ReportLoader = ({ session, onComplete }) => {
+const ReportLoader = ({ session }) => {
     // Dynamic text sequence for report generation
     const getLoadingSequence = () => {
         const role = session?.jobContext?.role || session?.role || "the role";

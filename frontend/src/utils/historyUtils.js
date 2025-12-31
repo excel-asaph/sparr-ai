@@ -1,48 +1,64 @@
 /**
- * buildHistoryChain
+ * @fileoverview Interview History Chain Utilities
  * 
- * Traverses the real interview list using parentId/childId pointers to build the full chain.
- * Transforms real Gemini report data into UI-expected format.
+ * Provides utilities for building and traversing linked interview session chains
+ * using parent/child ID relationships. Transforms raw Firestore data into
+ * UI-compatible format for the history explorer and report views.
  * 
- * @param {string} currentId - The ID of the session we are currently viewing/starting from.
- * @param {Array} allInterviews - The master list of all real interviews fetched from backend.
- * @returns {Array} - Ordered array of session objects [Oldest -> ... -> Newest].
+ * @module utils/historyUtils
+ */
+
+/**
+ * Builds a complete interview history chain from a starting session.
+ * 
+ * Traverses both backwards (ancestors) and forwards (descendants) through
+ * the linked list structure using parentId/childId references. Transforms
+ * Gemini report data into UI-expected format with proper field mapping.
+ * 
+ * @function buildHistoryChain
+ * @param {string} currentId - The ID of the session to start from
+ * @param {Array<Object>} allInterviews - All interviews fetched from Firestore
+ * @returns {Array<Object>} Ordered array of sessions [Oldest → Newest]
+ * 
+ * @example
+ * const chain = buildHistoryChain(selectedInterview.id, allInterviews);
+ * // Returns: [session1, session2, session3] in chronological order
  */
 export const buildHistoryChain = (currentId, allInterviews = []) => {
     if (!currentId || !allInterviews.length) return [];
 
-    // 1. Find the starting point
+    // Find the starting node
     const startNode = allInterviews.find(i => i.id === currentId);
     if (!startNode) return [];
 
     let chain = [startNode];
 
-    // 2. Traverse Backwards (Ancestors)
+    // Traverse backwards to find all ancestors
     let cursor = startNode;
-    let visitedIds = new Set([startNode.id]); // Cycle detection
+    let visitedIds = new Set([startNode.id]);
 
     while (cursor && cursor.parentId) {
-        if (visitedIds.has(cursor.parentId)) break; // Cycle detected
+        // Cycle detection to prevent infinite loops
+        if (visitedIds.has(cursor.parentId)) break;
 
         const parent = allInterviews.find(i => i.id === cursor.parentId);
         if (parent) {
-            chain.unshift(parent); // Add to front
+            chain.unshift(parent);
             visitedIds.add(parent.id);
             cursor = parent;
         } else {
-            console.warn(`Broken parent link: ${cursor.parentId} not found.`);
             break;
         }
     }
 
-    // 3. Traverse Forwards (Descendants) - In case we started in the middle
+    // Traverse forwards to find all descendants
     cursor = startNode;
     while (cursor && cursor.childId) {
         if (visitedIds.has(cursor.childId)) break;
 
         const child = allInterviews.find(i => i.id === cursor.childId);
         if (child) {
-            chain.push(child); // Add to end
+            chain.push(child);
             visitedIds.add(child.id);
             cursor = child;
         } else {
@@ -50,21 +66,20 @@ export const buildHistoryChain = (currentId, allInterviews = []) => {
         }
     }
 
-    // 4. Transform Reports to UI-expected format
+    // Transform each session to UI-expected format
     return chain.map((session) => {
-        // Clone to avoid mutating original state in cache
         const augmented = { ...session };
 
-        // Ensure 'date' property exists for UI compatibility
+        // Ensure date property exists for UI compatibility
         if (!augmented.date && augmented.createdAt) {
             augmented.date = augmented.createdAt;
         }
 
-        // Transform real report to UI-expected format
+        // Transform Gemini report to UI format
         if (augmented.report && augmented.report.stats) {
             const report = augmented.report;
 
-            // Map report.stats to skills for UI components
+            // Map report fields to top-level for UI components
             augmented.skills = report.stats || {};
             augmented.overallScore = report.overallScore || 0;
             augmented.highlights = report.highlights || [];
@@ -74,23 +89,22 @@ export const buildHistoryChain = (currentId, allInterviews = []) => {
             augmented.audioAnalysis = report.audioAnalysis || {};
             augmented.interviewerMessage = report.interviewerMessage || {};
 
-            // Map recording duration for waveform pin positioning
+            // Set recording duration for waveform visualization
             if (!augmented.recording) {
                 augmented.recording = {};
             }
             augmented.recording.duration = report.totalDuration || augmented.recording?.duration || "15:00";
 
-            // Ensure basic fields exist
+            // Extract job context fields
             augmented.role = augmented.jobContext?.role || 'Interview';
             augmented.company = augmented.jobContext?.company || 'Company';
             augmented.companyColor = "#111827";
         }
 
-        // Ensure audioUrl is preserved for audio playback
-        // (audioUrl is stored at top level of interview document, not in report)
+        // Preserve audioUrl for playback
         augmented.audioUrl = augmented.audioUrl || null;
 
-        // Ensure Agent Object exists (UI fallback)
+        // Ensure agent object exists for UI
         if (!augmented.agent) {
             augmented.agent = {
                 name: (typeof augmented.persona === 'string' ? augmented.persona : augmented.persona?.name) || 'Interviewer',

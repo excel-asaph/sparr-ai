@@ -1,6 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+/**
+ * @fileoverview Session Setup Wizard Component
+ * 
+ * Multi-step wizard for configuring mock interview sessions. Guides users
+ * through role selection, experience level, company targeting, resume upload,
+ * job variant selection, persona selection, and session creation.
+ * 
+ * @module components/dashboard/SessionSetupWizard
+ */
+
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Upload, Check, AlertCircle, Briefcase, Building, Layers, User, ArrowRight, X, FileText, UploadCloud, Trash2 } from 'lucide-react';
+import { ChevronRight, Check, ArrowRight, X, FileText, UploadCloud, Trash2 } from 'lucide-react';
 import { SiGoogle, SiAmazon, SiMeta, SiNetflix } from 'react-icons/si';
 import { FaMicrosoft } from 'react-icons/fa';
 import SparrLoader from '../SparrLoader';

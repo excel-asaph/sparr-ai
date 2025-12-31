@@ -1,5 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, Mic } from 'lucide-react';
+/**
+ * @fileoverview Voicemail Player Component
+ * 
+ * Audio player for interviewer voice messages with visual waveform,
+ * play/pause controls, progress tracking, and message transcript display.
+ * 
+ * @module components/dashboard/VoicemailPlayer
+ */
+
+import { useState, useRef } from 'react';
+import { Play, Pause } from 'lucide-react';
 
 const VoicemailPlayer = ({ voicemail, agent, message }) => {
     const [isPlaying, setIsPlaying] = useState(false);

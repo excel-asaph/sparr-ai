@@ -1,8 +1,21 @@
+/**
+ * @fileoverview Interview Report Detail Component
+ * 
+ * Comprehensive report view displaying interview performance analysis.
+ * Features radar chart for skills, waveform timeline with highlights,
+ * feedback cards, recommendations, and PDF export functionality.
+ * 
+ * @module components/dashboard/ReportDetail
+ * @requires recharts
+ * @requires html2canvas
+ * @requires jspdf
+ */
+
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Play, AlertTriangle, CheckCircle, ThumbsUp, ThumbsDown, Lightbulb, ArrowRight, BookOpen, Link as LinkIcon, Download } from 'lucide-react';
+import { CheckCircle, ThumbsUp, ThumbsDown, Lightbulb, BookOpen, Link as LinkIcon, Download } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import VoicemailPlayer from './VoicemailPlayer';

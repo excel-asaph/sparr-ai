@@ -1,3 +1,26 @@
+/**
+ * @fileoverview Interviewer Personas Configuration
+ * 
+ * Defines available AI interviewer personas with their characteristics,
+ * voice IDs for ElevenLabs integration, and supported languages.
+ * 
+ * @module data/personas
+ */
+
+/**
+ * Available interviewer personas.
+ * Each persona has unique characteristics that affect interview style.
+ * 
+ * @constant {Array<Object>}
+ * @property {string} id - Unique persona identifier
+ * @property {string} name - Display name
+ * @property {string} role - Role description
+ * @property {string} description - Behavioral description
+ * @property {string} voiceId - ElevenLabs voice ID
+ * @property {string} avatar - Avatar image URL
+ * @property {Array<string>} languages - Supported language codes
+ * @property {Object} [imgStyle] - Optional CSS styling for avatar
+ */
 export const PERSONAS = [
     {
         id: 'vibe',
@@ -48,15 +71,22 @@ export const PERSONAS = [
     }
 ];
 
+/**
+ * Language code to display name mapping.
+ * @constant {Object.<string, string>}
+ */
 export const LANGUAGE_NAMES = {
     'us': 'English', 'es': 'Spanish', 'ru': 'Russian', 'ro': 'Romanian',
     'sk': 'Slovak', 'hr': 'Croatian', 'it': 'Italian', 'de': 'German',
     'pl': 'Polish', 'dk': 'Danish'
 };
 
-// Map flag codes to ElevenLabs language codes
+/**
+ * Maps flag codes to ElevenLabs language codes.
+ * @constant {Object.<string, string>}
+ */
 export const FLAG_TO_ELEVENLABS_LANG = {
     'us': 'en', 'es': 'es', 'de': 'de', 'it': 'it',
     'ru': 'ru', 'pl': 'pl', 'ro': 'ro', 'sk': 'sk',
-    'hr': 'hr', 'dk': 'da'  // Danish
+    'hr': 'hr', 'dk': 'da'
 };

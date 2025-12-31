@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+/**
+ * @fileoverview Progress Dashboard Analytics Component
+ * 
+ * Displays interview performance evolution with interactive charts.
+ * Features skill trend lines, radar comparison charts, and metric cards.
+ * Supports comparison modes: First vs Current, Last vs Current, Best vs Current.
+ * 
+ * @module components/dashboard/ProgressDashboard
+ * @requires recharts
+ */
+
+import { useState } from 'react';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, AreaChart, Area
 } from 'recharts';
 import { TrendingUp, Award, Zap, Target, ArrowUpRight, Link as LinkIcon } from 'lucide-react';

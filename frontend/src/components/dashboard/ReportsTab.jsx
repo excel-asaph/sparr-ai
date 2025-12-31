@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Reports Tab Container Component
+ * 
+ * Main container for browsing and viewing interview reports.
+ * Features session list with score previews and detailed report view.
+ * Handles report generation states (generating, ready, unavailable).
+ * 
+ * @module components/dashboard/ReportsTab
+ */
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart2, Calendar } from 'lucide-react';
