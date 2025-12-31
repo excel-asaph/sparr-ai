@@ -6,7 +6,7 @@
 
 ---
 
-## 🎥 Demo Video
+## Demo Video
 
 [![Watch the Demo](https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=for-the-badge&logo=youtube)](https://youtube.com/your-demo-link)
 
@@ -14,23 +14,23 @@
 
 ---
 
-## 🌐 Live Demo
+## Live Demo
 
-**[Try Sparr AI Live →](https://sparr-frontend-430715776322.us-central1.run.app)**
+**[Try Sparr AI Live →](https://sparr-frontend-430715776322.us-central1.run.app) https://sparr-frontend-430715776322.us-central1.run.app**
 
 > *Note: Requires microphone access for voice interviews*
 
 ---
 
-## 🏆 Challenge
+## Challenge
 
 **ElevenLabs Challenge** — *AI Partner Catalyst Hackathon (Google Cloud x ElevenLabs)*
 
-> Use ElevenLabs and Google Cloud AI to make your app conversational, intelligent, and voice-driven.
+> "Use ElevenLabs and Google Cloud AI to make your app conversational, intelligent, and voice-driven."
 
 ---
 
-## ✨ What is Sparr AI?
+## What is Sparr AI?
 
 **Sparr AI** is a hyper-realistic mock interview platform that turns interview prep into a full-contact sport.
 
@@ -42,7 +42,7 @@ Unlike passive interview simulators, Sparr AI uses **ElevenLabs Conversational A
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
 | Feature | Description |
 |---------|-------------|
@@ -65,7 +65,7 @@ Unlike passive interview simulators, Sparr AI uses **ElevenLabs Conversational A
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 <!-- Add your screenshots here -->
 
@@ -201,7 +201,7 @@ sequenceDiagram
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js v18+
@@ -212,7 +212,7 @@ sequenceDiagram
 
 ---
 
-## 🔧 Service Configuration
+## Service Configuration
 
 ### 1. Google Cloud Setup (Vertex AI)
 
@@ -241,29 +241,80 @@ sequenceDiagram
    - Select **JSON** format
    - Download and save as `key.json` in the `backend/` directory
 
-> ⚠️ **Important**: Never commit this key file to version control!
+   ![Create a Service Account](frontend/src/assets/sparr-2.gif)
+
+> **Important**: Don't commit this key file to version control
 
 ---
 
 ### 2. ElevenLabs Setup
 
+
 1. **Create an Account**
    - Sign up at [elevenlabs.io](https://elevenlabs.io)
 
 2. **Get Your API Key**
-   - Go to **Profile → API Keys**
-   - Copy your API key
+   - Go to **Developers → API Keys**
+   - Click **Create Key**
+   - Name it (e.g., `sparr ai`)
+   - Give access to the necessary Endpoints
+   - Click **Create Key** and copy your API key
 
-3. **Create a Conversational Agent**
-   - Navigate to **Conversational AI → Agents**
-   - Click **Create Agent**
+   ![ElevenLabs Setup](frontend/src/assets/sparr-3.gif)
+
+3. **Add Required Voices to My Voices**
+   
+   Search for each voice by Voice ID and add them to "My Voices":
+   
+   | Persona | Voice Name | Voice ID |
+   |---------|------------|----------|
+   | Michael | — | `ljX1ZrXuDIIRVcmiVSyR` |
+   | Kelsey | — | `YY7fzZmDizFQQv8XPAIY` |
+   | Ellen | — | `BIvP0GN1cAtSRTxNHnWS` |
+   | James | — | `KiAVAr8isNbPP0s3etPX` |
+   | Mark | — | `86SOy9VyOePcRbIneYDa` |
+
+   - Go to **Voices → Explore**
+   - Search using the Voice ID
+   - Click **Add to My Voices** for each
+
+   ![Search Voices](frontend/src/assets/search%20voices%20-%20elevenlabs.png)
+   
+   ![My Voices](frontend/src/assets/my%20voices%20-%20elevenlabs.png)
+
+4. **Create a Conversational Agent**
+   - Navigate to **Agents**
+   - Click **New Agent**
+   - Select **Blank Agent**
+   - Name it (e.g., `Sparr AI`)
    - Configure the agent with:
-     - **Voice**: Choose a voice for your interviewer
-     - **Model**: Select a language model
+     - **Model**: Select **Gemini 2.5 Flash Lite**
      - **First Message**: Leave blank (we override this dynamically)
-   - Save the agent and copy the **Agent ID**
+     - Navigate to the **Tools** tab and toggle the **End Conversation** and **Detect Language** tools on
+     - Navigate to the **Security** tab and toggle all options in the **Overrides** section on
+     - Go the the **Advanced** tab, then head over to the **Conversational behavior** and set:
+       - **Eagerness**: **Eager**
+       - **Take turn after silence**: **7 seconds**
+       - **End conversation after silence**: **20 seconds**
+       - **Max conversation duration**: **300 seconds**
+   - Publish the agent and copy the **Agent ID** at the top left of the page
 
-> 💡 **Tip**: The Agent ID looks like: `agent_xxxxxxxxxxxxxxxxxxxx`
+   ![Create a Conversational Agent](frontend/src/assets/sparr-4.gif)
+
+5. **Add Voices to Agent**
+   - In the agent settings, go to the **Agent** tab
+   - On the right side, find the **Voices** section
+   - Add all 5 voices you saved to "My Voices"
+
+   ![Voices Added to Agent](frontend/src/assets/voices%20added%20-%20elevenlabs.png)
+
+6. **Configure Languages**
+   - In the **Language** section of the Agent tab
+   - Add languages supported by each persona:
+     - **English** (all personas)
+     - **Spanish, Russian, Romanian, Slovak, Croatian, Italian, German, Polish, Danish** (Ellen only)
+
+> **Tip**: The Agent ID looks like: `agent_xxxxxxxxxxxxxxxxxxxx`
 
 ---
 
@@ -276,47 +327,56 @@ sequenceDiagram
    - Enable Google Analytics (optional)
 
 2. **Enable Authentication**
-   - Go to **Authentication → Sign-in method**
+   - Go to **Build → Authentication → Sign-in method**
    - Enable **Email/Password**
    - Enable **Google** provider
    - Enable **Anonymous** (for guest access)
 
 3. **Create Firestore Database**
-   - Go to **Firestore Database → Create database**
+   - Go to **Build → Firestore Database → Create database**
    - Start in **production mode**
    - Select a region (e.g., `us-central1`)
+   
+   ![Create Firestore Database](frontend/src/assets/sparr-5.gif)
 
 4. **Set Firestore Security Rules**
-   - Go to **Firestore → Rules**
+   - Go to **Build → Firestore Database → Rules**
    - Replace with:
    ```javascript
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
-       match /interviews/{interviewId} {
-         allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-         allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-         allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-       }
-     }
+         match /interviews/{interviewId} {
+            allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+            allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+            allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+         }
+      }
    }
    ```
 
 5. **Enable Cloud Storage**
-   - Go to **Storage → Get started**
+   - Go to **Build → Storage → Get started**
    - Set security rules:
+   - Simulation type: **get**
    ```javascript
    rules_version = '2';
    service firebase.storage {
-     match /b/{bucket}/o {
-       match /users/{userId}/{allPaths=**} {
-         allow read: if request.auth != null && request.auth.uid == userId;
-         allow write: if request.auth != null && request.auth.uid == userId
-                      && request.resource.size < 10 * 1024 * 1024;
-       }
-     }
+      match /b/{bucket}/o {
+         match /users/{userId}/{allPaths=**} {
+            allow read: if request.auth != null && request.auth.uid == userId;
+            allow write: if request.auth != null 
+                        && request.auth.uid == userId
+                        && request.resource.size < 10 * 1024 * 1024;
+         }
+         match /{allPaths=**} {
+            allow read, write: if false;
+         }
+      }
    }
    ```
+
+   ![Set Firestore Security Rules](frontend/src/assets/sparr-6.gif)
 
 6. **Get Web App Config**
    - Go to **Project Settings → General → Your apps**
@@ -329,9 +389,11 @@ sequenceDiagram
    - Click **Generate new private key**
    - Save as `serviceAccountKey.json` in `backend/`
 
+   ![Generate Admin SDK Service Account](frontend/src/assets/firebase-private-key.png)
+
 ---
 
-## 📦 Installation
+## Installation
 
 ### 1. Clone the Repository
 ```bash
