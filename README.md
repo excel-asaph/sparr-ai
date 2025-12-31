@@ -9,7 +9,7 @@
 
 ## Demo Video
 
-[![Watch the Demo](https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=for-the-badge&logo=youtube)](https://youtube.com/your-demo-link)
+[![Watch the Demo](https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/8WJDem5fetY)
 
 > *3-minute walkthrough showing the full interview experience*
 
