@@ -7,11 +7,13 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build outputs
 dist
 dist-ssr
 *.local
-*.json
 
 # Editor directories and files
 .vscode/*
@@ -23,9 +25,26 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables (SENSITIVE - never commit)
 .env
 .env.*
+.env.local
+.env.production
+
+# Service account keys (SENSITIVE - never commit)
 serviceAccountKey.json
 key.json
-*.txt
+**/key.json
+**/serviceAccountKey.json
+
+# Firebase config with secrets
+firebase_config.js
 *firebase_config.js
+
+# Debug/temp files
+*.txt
+debug_*.json
+
+# OS files
+Thumbs.db

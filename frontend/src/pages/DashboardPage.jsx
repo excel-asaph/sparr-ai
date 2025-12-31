@@ -22,6 +22,7 @@ import HomeTab from '../components/dashboard/HomeTab';
 import SpacesTab from '../components/dashboard/SpacesTab';
 import ResumesView from '../components/dashboard/ResumesView';
 import ProfileTab from '../components/dashboard/ProfileTab';
+import { API_URL } from '../utils/api';
 
 
 
@@ -120,7 +121,7 @@ const DashboardPage = () => {
         const fetchInterviews = async () => {
             try {
                 const token = await currentUser.getIdToken();
-                const res = await fetch('/api/interviews', {
+                const res = await fetch(`${API_URL}/api/interviews`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -164,7 +165,7 @@ const DashboardPage = () => {
                         formData.append('resume', activeSession.resumeFile);
                     }
 
-                    const res = await fetch('/api/interviews', {
+                    const res = await fetch(`${API_URL}/api/interviews`, {
                         method: 'POST',
                         body: formData,
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -235,7 +236,7 @@ const DashboardPage = () => {
         const refetchInterviews = async () => {
             try {
                 const token = await currentUser?.getIdToken();
-                const res = await fetch('/api/interviews', {
+                const res = await fetch(`${API_URL}/api/interviews`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -273,7 +274,7 @@ const DashboardPage = () => {
             formData.append('persona', JSON.stringify(sessionData.persona));
             if (sessionData.resumeFile) formData.append('resume', sessionData.resumeFile);
 
-            const res = await fetch('/api/interviews', {
+            const res = await fetch(`${API_URL}/api/interviews`, {
                 method: 'POST',
                 body: formData,
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -330,7 +331,7 @@ const DashboardPage = () => {
                 formData.append('parentId', sessionData.parentId);  // CRITICAL for linked list
             }
 
-            const res = await fetch('/api/interviews', {
+            const res = await fetch(`${API_URL}/api/interviews`, {
                 method: 'POST',
                 body: formData,
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -426,7 +427,8 @@ const DashboardPage = () => {
             });
 
             // API Call
-            await fetch(`http://localhost:3000/api/interviews/${interviewId}?cascade=${isCascade}`, {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            await fetch(`${apiUrl}/api/interviews/${interviewId}?cascade=${isCascade}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

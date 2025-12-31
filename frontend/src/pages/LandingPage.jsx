@@ -9,6 +9,7 @@ import ShimmeringText from '../components/ui/ShimmeringText';
 
 // Import Shared Data
 import { PERSONAS, LANGUAGE_NAMES } from '../data/personas';
+import { API_URL } from '../utils/api';
 
 // ... imports
 import { useAuth } from '../contexts/AuthContext';
@@ -139,7 +140,7 @@ const LandingPage = () => {
         setJobVariants([]); // Clear old jobs while loading
         setLastJobParams(currentParams); // Update cache key
 
-        fetch('/api/generate-jobs', {
+        fetch(`${API_URL}/api/generate-jobs`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -215,7 +216,7 @@ const LandingPage = () => {
           language: selectedLanguage // CRITICAL: Enforce language in system prompt
         };
 
-        fetch('/api/generate-system-prompt', {
+        fetch(`${API_URL}/api/generate-system-prompt`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(promptPayload)
@@ -878,7 +879,7 @@ const LandingPage = () => {
 
                                       formData.append('jobContext', jobContext);
 
-                                      fetch('/api/analyze-resume', {
+                                      fetch(`${API_URL}/api/analyze-resume`, {
                                         method: 'POST',
                                         body: formData
                                       })

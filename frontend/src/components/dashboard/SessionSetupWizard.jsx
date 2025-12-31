@@ -15,6 +15,7 @@ import { SiGoogle, SiAmazon, SiMeta, SiNetflix } from 'react-icons/si';
 import { FaMicrosoft } from 'react-icons/fa';
 import SparrLoader from '../SparrLoader';
 import { PERSONAS, LANGUAGE_NAMES } from '../../data/personas';
+import { API_URL } from '../../utils/api';
 
 const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
     const [step, setStep] = useState(1);
@@ -88,7 +89,7 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
         const finalComp = getCompany();
 
         try {
-            const res = await fetch('/api/generate-jobs', {
+            const res = await fetch(`${API_URL}/api/generate-jobs`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ company: finalComp, role: finalRole, level: finalExp })
@@ -129,7 +130,7 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
         formData.append('resume', file);
 
         try {
-            const res = await fetch('/api/analyze-resume', { method: 'POST', body: formData });
+            const res = await fetch(`${API_URL}/api/analyze-resume`, { method: 'POST', body: formData });
             const data = await res.json();
             setResumeAnalysisResult(data);
         } catch (err) {
@@ -160,7 +161,7 @@ const SessionSetupWizard = ({ onCancel, onSessionReady }) => {
 
         try {
             // 1. Generate Prompt
-            const promptRes = await fetch('/api/generate-system-prompt', {
+            const promptRes = await fetch(`${API_URL}/api/generate-system-prompt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(promptPayload)

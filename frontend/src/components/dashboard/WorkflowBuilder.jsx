@@ -31,6 +31,7 @@ import { getLayoutedElements } from '../../utils/layoutUtils';
 import { PERSONAS, LANGUAGE_NAMES } from '../../data/personas';
 import HistoryExplorer from './HistoryExplorer';
 import LeftSidebar from './LeftSidebar';
+import { API_URL } from '../../utils/api';
 
 const WorkflowHUD = ({ isLocked, setIsLocked, onLayout, onUndo, onRedo, canUndo, canRedo }) => {
     const { zoomIn, zoomOut, fitView } = useReactFlow();
@@ -865,7 +866,7 @@ const WorkflowBuilderInner = ({ sourceInterview, onClose, onStartSession, allInt
         };
 
         try {
-            const res = await fetch('/api/generate-followup-prompt', {
+            const res = await fetch(`${API_URL}/api/generate-followup-prompt`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

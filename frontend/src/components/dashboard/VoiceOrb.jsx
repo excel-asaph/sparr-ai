@@ -18,6 +18,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import Workbook from './Workbook';
 import { Orb } from '../ui/Orb';
+import { API_URL } from '../../utils/api';
 
 const VoiceOrb = ({ isActive, onEndCall, onLeaveSession, systemPrompt, voiceId, language, interviewId, parentId, previousInterview, jobContext, persona, currentUser }) => {
     // Local UI State
@@ -115,7 +116,7 @@ const VoiceOrb = ({ isActive, onEndCall, onLeaveSession, systemPrompt, voiceId, 
                 persona: persona?.name
             });
 
-            const response = await fetch('/api/generate-report', {
+            const response = await fetch(`${API_URL}/api/generate-report`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
