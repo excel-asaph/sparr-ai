@@ -44,7 +44,7 @@ Traditional interview prep tools are polite, scripted, and predictable. Real int
 ### Our Solution
 Unlike passive interview simulators, Sparr AI combines two powerful technologies:
 - **ElevenLabs Conversational AI** — Sub-second voice latency creates natural, flowing conversations
-- **Google Vertex AI (Gemini 2.5 Flash)** — Intelligent reasoning powers dynamic question generation
+- **Google Vertex AI (Gemini 2.5 Flash Lite)** — Intelligent reasoning powers dynamic question generation
 
 The result? Interviews that feel *real*, challenge you *meaningfully*, and help you *actually improve*.
 
@@ -141,7 +141,7 @@ The language is detected dynamically and enforced in the system prompt so the in
 
 ### Google Cloud (Vertex AI + Firebase)
 
-We use **Gemini 2.5 Flash** via Vertex AI for all intelligent reasoning tasks. Here's exactly HOW:
+We use **Gemini 2.5 Flash Lite** via Vertex AI for all intelligent reasoning tasks. Here's exactly HOW:
 
 #### 1. Job Archetype Generation (`/api/generate-jobs`)
 ```
@@ -238,7 +238,7 @@ flowchart TB
     end
 
     subgraph GCP["Google Cloud Platform"]
-        Gemini["Vertex AI (Gemini 2.0 Flash)"]
+        Gemini["Vertex AI (Gemini 2.5 Flash Lite)"]
         Firestore[(Firestore Database)]
         Storage[(Cloud Storage)]
         CloudRun["Cloud Run"]
@@ -578,7 +578,7 @@ Both frontend and backend are deployed to Google Cloud Run:
 
 1. **ElevenLabs Conversational AI is powerful** — The sub-second latency makes voice interactions feel natural. The `firstMessage` override was key to creating personalized greetings.
 
-2. **Gemini excels at context-aware generation** — From generating realistic job archetypes to crafting persona-specific system prompts, Gemini 2.0 Flash handled complex reasoning tasks efficiently.
+2. **Gemini excels at context-aware generation** — From generating realistic job archetypes to crafting persona-specific system prompts, Gemini 2.5 Flash Lite handled complex reasoning tasks efficiently.
 
 3. **State synchronization is critical** — Managing interview state across Firebase, React, and ElevenLabs required careful design to ensure data integrity.
 
