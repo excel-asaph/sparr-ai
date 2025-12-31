@@ -16,7 +16,7 @@
 
 ## 🌐 Live Demo
 
-**[Try Sparr AI Live →](https://sparr-ai.vercel.app)**
+**[Try Sparr AI Live →](https://sparr-frontend-430715776322.us-central1.run.app)**
 
 > *Note: Requires microphone access for voice interviews*
 
@@ -109,44 +109,227 @@ Unlike passive interview simulators, Sparr AI uses **ElevenLabs Conversational A
 
 ## 🏗 Architecture
 
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend (React + Vite)"]
+        UI[User Interface]
+        EL_SDK["ElevenLabs React SDK"]
+        Auth[Firebase Auth]
+    end
+
+    subgraph Backend["Backend (Node.js + Express)"]
+        API[REST API]
+        Jobs["/api/generate-jobs"]
+        Resume["/api/analyze-resume"]
+        Prompt["/api/generate-prompt"]
+        Report["/api/generate-report"]
+        CRUD["/api/interviews"]
+    end
+
+    subgraph GCP["Google Cloud Platform"]
+        Gemini["Vertex AI (Gemini 2.0 Flash)"]
+        Firestore[(Firestore Database)]
+        Storage[(Cloud Storage)]
+        CloudRun["Cloud Run"]
+    end
+
+    subgraph ElevenLabs["ElevenLabs"]
+        Agent["Conversational AI Agent"]
+        TTS["Voice Synthesis"]
+        STT["Speech-to-Text"]
+    end
+
+    UI --> Auth
+    UI --> API
+    UI <--> EL_SDK
+    EL_SDK <--> Agent
+    Agent --> TTS
+    Agent --> STT
+
+    API --> Jobs --> Gemini
+    API --> Resume --> Gemini
+    API --> Prompt --> Gemini
+    API --> Report --> Gemini
+    API --> CRUD --> Firestore
+    Resume --> Storage
+
+    CloudRun --> Frontend
+    CloudRun --> Backend
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        FRONTEND                             │
-│  React + Tailwind + Framer Motion + ElevenLabs SDK          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     NODE.JS BACKEND                         │
-│  /api/generate-jobs    → Gemini (Job Archetypes)            │
-│  /api/analyze-resume   → Gemini (Weakness Extraction)       │
-│  /api/generate-prompt  → Gemini (System Prompt for Agent)   │
-│  /api/generate-report  → Gemini (Post-Interview Analysis)   │
-│  /api/interviews       → Firestore (CRUD)                   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              ▼                               ▼
-┌──────────────────────┐         ┌──────────────────────┐
-│   GOOGLE VERTEX AI   │         │     ELEVENLABS       │
-│   (Gemini 2.0 Flash) │         │  (Conversational AI) │
-│                      │         │                      │
-│  • Job Generation    │         │  • Voice Synthesis   │
-│  • Resume Analysis   │         │  • Real-time STT     │
-│  • Prompt Crafting   │         │  • Persona Voices    │
-│  • Report Writing    │         │  • Multi-language    │
-└──────────────────────┘         └──────────────────────┘
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant G as Gemini AI
+    participant E as ElevenLabs
+    participant DB as Firestore
+
+    U->>F: Upload Resume + Select Role
+    F->>B: POST /api/analyze-resume
+    B->>G: Extract Weaknesses
+    G-->>B: Weakness Analysis
+    B-->>F: Resume Insights
+
+    F->>B: POST /api/generate-jobs
+    B->>G: Generate Job Archetypes
+    G-->>B: Job Variants
+    B-->>F: Display Options
+
+    F->>B: POST /api/generate-prompt
+    B->>G: Craft System Prompt
+    G-->>B: Persona-Specific Prompt
+    B-->>F: Ready to Start
+
+    F->>E: Start Conversation (with System Prompt)
+    loop Real-time Interview
+        U->>E: Voice Input
+        E-->>U: AI Voice Response
+    end
+
+    E->>F: Conversation Ended
+    F->>B: POST /api/generate-report
+    B->>E: Fetch Transcript
+    B->>G: Analyze Performance
+    G-->>B: Detailed Report
+    B->>DB: Save Interview + Report
+    B-->>F: Display Results
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js v18+
-- Google Cloud Account (Vertex AI enabled)
-- ElevenLabs Account (API Key + Agent ID)
-- Firebase Project (Auth, Firestore, Storage)
+- npm or yarn
+- Google Cloud Account
+- ElevenLabs Account
+- Firebase Account
+
+---
+
+## 🔧 Service Configuration
+
+### 1. Google Cloud Setup (Vertex AI)
+
+1. **Create a Google Cloud Project**
+   - Go to [Google Cloud Console](https://console.cloud.google.com)
+   - Create a new project or select an existing one
+   - Note your **Project ID** (displayed below the welcome message)
+
+2. **Enable Required APIs**
+   Navigate to **APIs & Services → Enable APIs** and enable:
+   - Vertex AI API
+   - Cloud Storage API
+
+3. **Create a Service Account**
+   - Go to **IAM & Admin → Service Accounts**
+   - Click **+ Create Service Account**
+   - Name it (e.g., `sparr-ai-backend`)
+   - Grant roles: `Vertex AI User`, `Storage Object Admin`
+   - Click **Done**
+
+4. **Generate Service Account Key**
+   - Click on your new service account
+   - Go to **Keys → Add Key → Create new key**
+   - Select **JSON** format
+   - Download and save as `key.json` in the `backend/` directory
+
+> ⚠️ **Important**: Never commit this key file to version control!
+
+---
+
+### 2. ElevenLabs Setup
+
+1. **Create an Account**
+   - Sign up at [elevenlabs.io](https://elevenlabs.io)
+
+2. **Get Your API Key**
+   - Go to **Profile → API Keys**
+   - Copy your API key
+
+3. **Create a Conversational Agent**
+   - Navigate to **Conversational AI → Agents**
+   - Click **Create Agent**
+   - Configure the agent with:
+     - **Voice**: Choose a voice for your interviewer
+     - **Model**: Select a language model
+     - **First Message**: Leave blank (we override this dynamically)
+   - Save the agent and copy the **Agent ID**
+
+> 💡 **Tip**: The Agent ID looks like: `agent_xxxxxxxxxxxxxxxxxxxx`
+
+---
+
+### 3. Firebase Setup
+
+1. **Create a Firebase Project**
+   - Go to [Firebase Console](https://console.firebase.google.com)
+   - Click **Create a project**
+   - Name it (e.g., `sparr-ai`)
+   - Enable Google Analytics (optional)
+
+2. **Enable Authentication**
+   - Go to **Authentication → Sign-in method**
+   - Enable **Email/Password**
+   - Enable **Google** provider
+   - Enable **Anonymous** (for guest access)
+
+3. **Create Firestore Database**
+   - Go to **Firestore Database → Create database**
+   - Start in **production mode**
+   - Select a region (e.g., `us-central1`)
+
+4. **Set Firestore Security Rules**
+   - Go to **Firestore → Rules**
+   - Replace with:
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /interviews/{interviewId} {
+         allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+         allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+         allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+       }
+     }
+   }
+   ```
+
+5. **Enable Cloud Storage**
+   - Go to **Storage → Get started**
+   - Set security rules:
+   ```javascript
+   rules_version = '2';
+   service firebase.storage {
+     match /b/{bucket}/o {
+       match /users/{userId}/{allPaths=**} {
+         allow read: if request.auth != null && request.auth.uid == userId;
+         allow write: if request.auth != null && request.auth.uid == userId
+                      && request.resource.size < 10 * 1024 * 1024;
+       }
+     }
+   }
+   ```
+
+6. **Get Web App Config**
+   - Go to **Project Settings → General → Your apps**
+   - Click **Add app** → **Web** (</> icon)
+   - Register the app
+   - Copy the Firebase config values
+
+7. **Generate Admin SDK Service Account**
+   - Go to **Project Settings → Service accounts**
+   - Click **Generate new private key**
+   - Save as `serviceAccountKey.json` in `backend/`
+
+---
+
+## 📦 Installation
 
 ### 1. Clone the Repository
 ```bash
@@ -160,17 +343,21 @@ cd backend
 npm install
 ```
 
-Create a `.env` file:
+Create a `.env` file in `backend/`:
 ```env
-GOOGLE_APPLICATION_CREDENTIALS=./your-service-account.json
+PROJECT_ID=your-google-cloud-project-id
+KEY_PATH=./key.json
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
 ```
 
-Place your Google Cloud service account JSON in the `backend/` directory.
+Place your service account keys:
+- `key.json` (Google Cloud service account)
+- `serviceAccountKey.json` (Firebase Admin SDK)
 
 Start the server:
 ```bash
 node server.js
+# ✅ Backend running on port 3000
 ```
 
 ### 3. Frontend Setup
@@ -179,25 +366,65 @@ cd frontend
 npm install
 ```
 
-Create a `.env` file:
+Create a `.env` file in `frontend/`:
 ```env
 VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
-VITE_ELEVENLABS_AGENT_ID=your_elevenlabs_agent_id
+VITE_ELEVENLABS_AGENT_ID=agent_xxxxxxxxxxxxx
+VITE_API_URL=http://localhost:3000
 ```
 
 Start the development server:
 ```bash
 npm run dev
+# ➜ Local: http://localhost:5173/
 ```
 
 ---
 
-## 📊 Hackathon Alignment
+## 🌐 Deployment (Google Cloud Run)
+
+Both frontend and backend are deployed to Google Cloud Run:
+
+| Service | URL |
+|---------|-----|
+| **Frontend** | https://sparr-frontend-430715776322.us-central1.run.app |
+| **Backend** | https://sparr-api-430715776322.us-central1.run.app |
+
+### Deploy Your Own Instance
+
+1. Install [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) and [Docker](https://www.docker.com/products/docker-desktop/)
+
+2. Authenticate:
+```bash
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+```
+
+3. Enable APIs:
+```bash
+gcloud services enable cloudbuild.googleapis.com run.googleapis.com artifactregistry.googleapis.com
+```
+
+4. Deploy Backend:
+```bash
+cd backend
+gcloud run deploy sparr-api --source . --region us-central1 --platform managed --allow-unauthenticated
+```
+
+5. Deploy Frontend:
+```bash
+cd frontend
+gcloud run deploy sparr-frontend --source . --region us-central1 --platform managed --allow-unauthenticated
+```
+
+---
+
+<!-- ## 📊 Hackathon Alignment
 
 ### ElevenLabs Challenge Requirements ✅
 
@@ -218,7 +445,7 @@ npm run dev
 | **Potential Impact** | Millions of job seekers can practice realistic interviews affordably — democratizing interview prep |
 | **Quality of the Idea** | Unique persona system + resume-aware probing + session continuity is novel in the interview prep space |
 
----
+--- -->
 
 ## 💡 Learnings & Challenges
 
@@ -274,7 +501,7 @@ Built for the **AI Partner Catalyst Hackathon** (Google Cloud x ElevenLabs x Dev
 
 ## 📜 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
 
 ---
 
