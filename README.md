@@ -226,6 +226,8 @@ sequenceDiagram
    - Vertex AI API
    - Cloud Storage API
 
+   ![Enable Google Cloud APIs](frontend/src/assets/sparr-1.gif)
+
 3. **Create a Service Account**
    - Go to **IAM & Admin → Service Accounts**
    - Click **+ Create Service Account**
